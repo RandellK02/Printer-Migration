@@ -14,11 +14,18 @@ namespace Printer_Migration
     public partial class Form1 : Form
     {
         public Stream myStream;
+        private static string useDirectory = @"C:\Printer_Migration\";
+        private static string logFile = useDirectory + "printer.log";
+        private static string errorLogFile = useDirectory + "error.log";
 
         public Form1()
         {
             InitializeComponent();
             myStream = null;
+            if (!Directory.Exists(useDirectory))
+            {
+                Directory.CreateDirectory(useDirectory);
+            }
         }
 
         private void btnBrowse_Click(object sender, EventArgs e)
@@ -118,6 +125,10 @@ namespace Printer_Migration
                 case "PINGCOMPUTERS":
                     pbPingComputers.Value = e.ProgressPercentage;
                     break;
+
+                case "TRANSFERPAYLOAD":
+                    pbSendPayload.Value = e.ProgressPercentage;
+                    break;
             }
         }
 
@@ -126,6 +137,36 @@ namespace Printer_Migration
             BackgroundWorker worker = sender as BackgroundWorker;
             generateComputerNames(worker);
             pingComputers(worker);
+            transferPayload(worker);
+        }
+
+        private void transferPayload(BackgroundWorker worker)
+        {
+            System.Reflection.Assembly myAssembly = System.Reflection.Assembly.GetExecutingAssembly();
+            Stream myStream = myAssembly.GetManifestResourceStream("PrinterMigration.Payload.exe");
+            int progress = 0;
+            double realProgress = 0;
+
+            foreach (string computer in Globals.onlineComputers)
+            {
+                try
+                {
+                    using (var fileStream = File.Create(@"\\" + computer + @"\C$\Printer_Migration\Payload.exe"))
+                    {
+                        myStream.CopyTo(fileStream);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errorReport(ex.ToString() + ". Error copying payload to " + computer);
+                }
+                finally
+                {
+                    realProgress += (100f / Globals.computers.Count);
+                    progress = (int)Math.Round(realProgress);
+                    worker.ReportProgress(progress, "TRANSFERPAYLOAD");
+                }
+            }
         }
 
         private void pingComputers(BackgroundWorker worker)
@@ -191,6 +232,24 @@ namespace Printer_Migration
         }
 
         #endregion bwRun
+
+        #region Logs
+
+        private static void errorReport(string str)
+        {
+            System.IO.StreamWriter fstream = new System.IO.StreamWriter(errorLogFile, true);
+            fstream.WriteLine(str);
+            fstream.Close();
+        }
+
+        private static void report(string str)
+        {
+            System.IO.StreamWriter fstream = new System.IO.StreamWriter(logFile, true);
+            fstream.WriteLine(str);
+            fstream.Close();
+        }
+
+        #endregion Logs
 
         private void getUsers()
         {
