@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Management;
 using System.Text;
@@ -9,6 +10,7 @@ namespace Payload
 {
     internal class Program
     {
+        private static string printServer = @"\\DR3PRINT\";
         private static string useDirectory = @"C:\Printer_Migration\";
         private static string logFile = useDirectory + "printer.log";
         private static string errorLogFile = useDirectory + "error.log";
@@ -24,33 +26,14 @@ namespace Payload
             printersToAdd = new List<string>();
             printersToRemove = new List<string>();
             remove = new List<string>();
+
+            if (!Directory.Exists(useDirectory))
+            {
+                Directory.CreateDirectory(useDirectory);
+            }
             validateCommand(args);
             DeleteRetiredPrinters();
-            AddNewPrinters();
-        }
-
-        public static bool DeletePrinter(string sPrinterName)
-        {
-            oManagementScope = new ManagementScope(ManagementPath.DefaultPath);
-            oManagementScope.Connect();
-
-            SelectQuery oSelectQuery = new SelectQuery();
-            oSelectQuery.QueryString = @"SELECT * FROM Win32_Printer WHERE Name = '" +
-               sPrinterName.Replace("\\", "\\\\") + "'";
-
-            ManagementObjectSearcher oObjectSearcher =
-               new ManagementObjectSearcher(oManagementScope, oSelectQuery);
-            ManagementObjectCollection oObjectCollection = oObjectSearcher.Get();
-
-            if (oObjectCollection.Count != 0)
-            {
-                foreach (ManagementObject oItem in oObjectCollection)
-                {
-                    oItem.Delete();
-                    return true;
-                }
-            }
-            return false;
+            //AddNewPrinters();
         }
 
         private static void validateCommand(string[] args)
@@ -89,17 +72,22 @@ namespace Payload
 
         private static void DeleteRetiredPrinters()
         {
-            GetInstalledPrinters(ref installedPrinters);
+            GetInstalledPrinters();
 
             report("Installed Printers");
             report("=====================================");
-            LogInstalledComputers(installedPrinters);
+            LogInstalledComputers();
 
             report("Printers needed to remove");
             report("=====================================");
             Compare();
 
             DeletePrinters();
+
+            report("Installed Printers after Deletion");
+            report("=====================================");
+            GetInstalledPrinters();
+            LogInstalledComputers();
         }
 
         private static void DeletePrinters()
@@ -111,11 +99,17 @@ namespace Payload
             {
                 try
                 {
+                    if (DeletePrinterConnection(printServer + printer) == 0)
+                    {
+                        errorReport("Error removing printer " + printer);
+                    }
                 }
                 catch (Exception ex)
                 {
+                    errorReport("Error removing printer " + printer + ". " + ex.ToString());
                 }
             }
+            System.Threading.Thread.Sleep(5000);
         }
 
         private static void Compare()
@@ -133,7 +127,7 @@ namespace Payload
             }
         }
 
-        private static void GetInstalledPrinters(ref List<string> printers)
+        private static void GetInstalledPrinters()
         {
             RegistryKey key, subkey = null;
             try
@@ -149,7 +143,7 @@ namespace Payload
 
                     foreach (string printer in subkey.GetSubKeyNames())
                     {
-                        printers.Add(printer.Replace(',', ' ').Trim().ToUpper());
+                        installedPrinters.Add(printer.Replace(',', ' ').Trim().ToUpper());
                     }
                 }
                 if (subkey != null)
@@ -167,9 +161,9 @@ namespace Payload
 
         #region Logs
 
-        private static void LogInstalledComputers(List<string> printers)
+        private static void LogInstalledComputers()
         {
-            foreach (string printer in printers)
+            foreach (string printer in installedPrinters)
             {
                 report(printer);
                 report("");
@@ -191,5 +185,29 @@ namespace Payload
         }
 
         #endregion Logs
+
+        public static bool DeletePrinter(string sPrinterName)
+        {
+            oManagementScope = new ManagementScope(ManagementPath.DefaultPath);
+            oManagementScope.Connect();
+
+            SelectQuery oSelectQuery = new SelectQuery();
+            oSelectQuery.QueryString = @"SELECT * FROM Win32_Printer WHERE Name = '" +
+               sPrinterName.Replace("\\", "\\\\") + "'";
+
+            ManagementObjectSearcher oObjectSearcher =
+               new ManagementObjectSearcher(oManagementScope, oSelectQuery);
+            ManagementObjectCollection oObjectCollection = oObjectSearcher.Get();
+
+            if (oObjectCollection.Count != 0)
+            {
+                foreach (ManagementObject oItem in oObjectCollection)
+                {
+                    oItem.Delete();
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }
