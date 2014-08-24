@@ -60,6 +60,7 @@ namespace Payload
                 {
                     if (!validatePrinterName(printer))
                     {
+                        report(printer + " Not Found!");
                         continue;
                     }
                     if (AddPrinterConnection(printServer + printer) == 0)
