@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management;
+using System.Net.NetworkInformation;
+using System.Printing;
 using System.Text;
 
 namespace Payload
@@ -56,6 +58,10 @@ namespace Payload
             {
                 try
                 {
+                    if (!validatePrinterName(printer))
+                    {
+                        continue;
+                    }
                     if (AddPrinterConnection(printServer + printer) == 0)
                     {
                         errorReport("Error adding printer " + printer);
@@ -73,6 +79,27 @@ namespace Payload
             installedPrinters.Clear();
             GetInstalledPrinters();
             LogInstalledComputers();
+        }
+
+        private static bool validatePrinterName(string printerName)
+        {
+            bool found = false;
+            if (!ping(printerName))
+            {
+                using (PrintServer printServer = new PrintServer(string.Format(@"\\{0}", "DR3PRINT")))
+                {
+                    foreach (var printer in printServer.GetPrintQueues())
+                    {
+                        if (printer.Name.ToUpper().Equals(printerName.ToUpper()))
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return found;
         }
 
         #endregion ADD
@@ -161,6 +188,19 @@ namespace Payload
             {
                 errorReport(ex.ToString());
             }
+        }
+
+        private static bool ping(string server)
+        {
+            Ping p = new Ping();
+            try
+            {
+                PingReply reply = p.Send(server);
+                if (reply.Status == IPStatus.Success)
+                    return true;
+            }
+            catch { }
+            return false;
         }
 
         private static void validateCommand(string[] args)
