@@ -19,10 +19,10 @@ namespace Payload
         private static List<string> printersToAdd, printersToRemove, installedPrinters, remove;
         private static ManagementScope oManagementScope = null;
 
-        [System.Runtime.InteropServices.DllImport("winspool.drv")]
+        [System.Runtime.InteropServices.DllImport( "winspool.drv" )]
         public static extern int DeletePrinterConnection(string printerName);
 
-        [System.Runtime.InteropServices.DllImport("winspool.drv")]
+        [System.Runtime.InteropServices.DllImport( "winspool.drv" )]
         public static extern int AddPrinterConnection(string printerName);
 
         private static void Main(string[] args)
@@ -32,51 +32,52 @@ namespace Payload
             printersToRemove = new List<string>();
             remove = new List<string>();
 
-            if (!Directory.Exists(useDirectory))
+            if ( !Directory.Exists( useDirectory ) )
             {
-                Directory.CreateDirectory(useDirectory);
+                Directory.CreateDirectory( useDirectory );
             }
-            validateCommand(args);
+            validateCommand( args );
             DeleteRetiredPrinters();
             AddNewPrinters();
 
-            report("END OF REPORT");
-            errorReport("END OF REPORT");
+            report( "END OF REPORT" );
+            errorReport( "END OF REPORT" );
         }
 
         #region ADD
 
         private static void AddNewPrinters()
         {
-            if (printersToAdd.Count < 1)
+            if ( printersToAdd.Count < 1 )
                 return;
 
-            report("Adding New Printer");
-            report("=====================================");
+            report( "Adding New Printer" );
+            report( "=====================================" );
 
-            foreach (string printer in printersToAdd)
+            foreach ( string printer in printersToAdd )
             {
                 try
                 {
-                    if (!validatePrinterName(printer))
+                    if ( !validatePrinterName( printer ) )
                     {
-                        report(printer + " Not Found!");
+                        report( printer + " Not Found!" );
                         continue;
                     }
-                    if (AddPrinterConnection(printServer + printer) == 0)
+                    if ( AddPrinterConnection( printServer + printer ) == 0 )
                     {
-                        errorReport("Error adding printer " + printer);
+                        errorReport( "Error adding printer " + printer );
                     }
-                    report(printer + " added");
+                    report( printer + " added" );
                 }
-                catch (Exception ex)
+                catch ( Exception ex )
                 {
-                    errorReport(ex.ToString() + ". Error adding printer " + printer);
+                    errorReport( ex.ToString() + ". Error adding printer " + printer );
                 }
             }
 
-            report("Installed Printers after Additions");
-            report("=====================================");
+            report( "" );
+            report( "Installed Printers after Additions" );
+            report( "=====================================" );
             installedPrinters.Clear();
             GetInstalledPrinters();
             LogInstalledComputers();
@@ -85,19 +86,23 @@ namespace Payload
         private static bool validatePrinterName(string printerName)
         {
             bool found = false;
-            if (!ping(printerName))
+            if ( !ping( printerName ) )
             {
-                using (PrintServer printServer = new PrintServer(string.Format(@"\\{0}", "DR3PRINT")))
+                using ( PrintServer printSrvr = new PrintServer( string.Format( @"\\{0}", "DR3PRINT" ) ) )
                 {
-                    foreach (var printer in printServer.GetPrintQueues())
+                    foreach ( var printer in printSrvr.GetPrintQueues() )
                     {
-                        if (printer.Name.ToUpper().Equals(printerName.ToUpper()))
+                        if ( printer.Name.ToUpper().Equals( printerName.ToUpper() ) )
                         {
                             found = true;
                             break;
                         }
                     }
                 }
+            }
+            else
+            {
+                found = true;
             }
 
             return found;
@@ -111,19 +116,19 @@ namespace Payload
         {
             GetInstalledPrinters();
 
-            report("Installed Printers");
-            report("=====================================");
+            report( "Installed Printers" );
+            report( "=====================================" );
             LogInstalledComputers();
 
-            report("Printers needed to remove");
-            report("=====================================");
+            report( "Printers needed to remove" );
+            report( "=====================================" );
             Compare();
-            report("");
+            report( "" );
 
             DeletePrinters();
 
-            report("Installed Printers after Deletion");
-            report("=====================================");
+            report( "Installed Printers after Deletion" );
+            report( "=====================================" );
             installedPrinters.Clear();
             GetInstalledPrinters();
             LogInstalledComputers();
@@ -131,36 +136,36 @@ namespace Payload
 
         private static void DeletePrinters()
         {
-            if (remove.Count < 1)
+            if ( remove.Count < 1 )
                 return;
 
-            foreach (string printer in remove)
+            foreach ( string printer in remove )
             {
                 try
                 {
-                    if (DeletePrinterConnection(printServer + printer) == 0)
+                    if ( DeletePrinterConnection( printServer + printer ) == 0 )
                     {
-                        errorReport("Error removing printer " + printer);
+                        errorReport( "Error removing printer " + printer );
                     }
                 }
-                catch (Exception ex)
+                catch ( Exception ex )
                 {
-                    errorReport("Error removing printer " + printer + ". " + ex.ToString());
+                    errorReport( "Error removing printer " + printer + ". " + ex.ToString() );
                 }
-                System.Threading.Thread.Sleep(1000);
+                System.Threading.Thread.Sleep( 1000 );
             }
         }
 
         private static void Compare()
         {
-            foreach (string printer in printersToRemove)
+            foreach ( string printer in printersToRemove )
             {
-                foreach (string installedPrinter in installedPrinters)
+                foreach ( string installedPrinter in installedPrinters )
                 {
-                    if (printer.Equals(installedPrinter))
+                    if ( printer.Equals( installedPrinter ) )
                     {
-                        remove.Add(printer);
-                        report(printer);
+                        remove.Add( printer );
+                        report( printer );
                     }
                 }
             }
@@ -174,20 +179,20 @@ namespace Payload
             string temp;
             try
             {
-                key = Registry.CurrentUser.OpenSubKey(@"Printers\Connections");
-                foreach (string printer in key.GetSubKeyNames())
+                key = Registry.CurrentUser.OpenSubKey( @"Printers\Connections" );
+                foreach ( string printer in key.GetSubKeyNames() )
                 {
-                    temp = printer.Replace(',', ' ').Trim().ToUpper();
-                    temp = temp.Replace("DR3PRINT", "").Trim();
+                    temp = printer.Replace( ',', ' ' ).Trim().ToUpper();
+                    temp = temp.Replace( "DR3PRINT", "" ).Trim();
 
-                    installedPrinters.Add(temp);
+                    installedPrinters.Add( temp );
                 }
 
                 key.Close();
             }
-            catch (Exception ex)
+            catch ( Exception ex )
             {
-                errorReport(ex.ToString());
+                errorReport( ex.ToString() );
             }
         }
 
@@ -196,8 +201,8 @@ namespace Payload
             Ping p = new Ping();
             try
             {
-                PingReply reply = p.Send(server);
-                if (reply.Status == IPStatus.Success)
+                PingReply reply = p.Send( server );
+                if ( reply.Status == IPStatus.Success )
                     return true;
             }
             catch { }
@@ -208,26 +213,26 @@ namespace Payload
         {
             try
             {
-                for (int i = 0; i < args.Length; i++)
+                for ( int i = 0; i < args.Length; i++ )
                 {
-                    if (args[i].Equals("-a"))
+                    if ( args[i].Equals( "-a" ) )
                     {
-                        while (!args[++i].Equals("-d") && i < args.Length)
+                        while ( !args[++i].Equals( "-d" ) && i < args.Length )
                         {
-                            printersToAdd.Add(args[i].Replace(',', ' ').Trim().ToUpper());
+                            printersToAdd.Add( args[i].Replace( ',', ' ' ).Trim().ToUpper() );
                         }
                     }
-                    else if (args[i].Equals("-d"))
+                    else if ( args[i].Equals( "-d" ) )
                     {
-                        while (i < args.Length && !args[++i].Equals("-a"))
+                        while ( i < args.Length && !args[++i].Equals( "-a" ) )
                         {
-                            printersToRemove.Add(args[i].Replace(',', ' ').Trim().ToUpper());
+                            printersToRemove.Add( args[i].Replace( ',', ' ' ).Trim().ToUpper() );
                         }
                     }
                     i--;
                 }
             }
-            catch (System.IndexOutOfRangeException)
+            catch ( System.IndexOutOfRangeException )
             {
                 // Ok to be here, end of args
             }
@@ -237,24 +242,24 @@ namespace Payload
 
         private static void LogInstalledComputers()
         {
-            foreach (string printer in installedPrinters)
+            foreach ( string printer in installedPrinters )
             {
-                report(printer);
+                report( printer );
             }
-            report("");
+            report( "" );
         }
 
         private static void errorReport(string str)
         {
-            System.IO.StreamWriter fstream = new System.IO.StreamWriter(errorLogFile, true);
-            fstream.WriteLine(str);
+            System.IO.StreamWriter fstream = new System.IO.StreamWriter( errorLogFile, true );
+            fstream.WriteLine( str );
             fstream.Close();
         }
 
         private static void report(string str)
         {
-            System.IO.StreamWriter fstream = new System.IO.StreamWriter(logFile, true);
-            fstream.WriteLine(str);
+            System.IO.StreamWriter fstream = new System.IO.StreamWriter( logFile, true );
+            fstream.WriteLine( str );
             fstream.Close();
         }
 
@@ -262,20 +267,20 @@ namespace Payload
 
         public static bool DeletePrinter(string sPrinterName)
         {
-            oManagementScope = new ManagementScope(ManagementPath.DefaultPath);
+            oManagementScope = new ManagementScope( ManagementPath.DefaultPath );
             oManagementScope.Connect();
 
             SelectQuery oSelectQuery = new SelectQuery();
             oSelectQuery.QueryString = @"SELECT * FROM Win32_Printer WHERE Name = '" +
-               sPrinterName.Replace("\\", "\\\\") + "'";
+               sPrinterName.Replace( "\\", "\\\\" ) + "'";
 
             ManagementObjectSearcher oObjectSearcher =
-               new ManagementObjectSearcher(oManagementScope, oSelectQuery);
+               new ManagementObjectSearcher( oManagementScope, oSelectQuery );
             ManagementObjectCollection oObjectCollection = oObjectSearcher.Get();
 
-            if (oObjectCollection.Count != 0)
+            if ( oObjectCollection.Count != 0 )
             {
-                foreach (ManagementObject oItem in oObjectCollection)
+                foreach ( ManagementObject oItem in oObjectCollection )
                 {
                     oItem.Delete();
                     return true;
