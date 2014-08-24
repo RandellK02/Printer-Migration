@@ -37,8 +37,8 @@
             this.label4 = new System.Windows.Forms.Label();
             this.bwUserImport = new System.ComponentModel.BackgroundWorker();
             this.textBox2 = new System.Windows.Forms.TextBox();
-            this.textBox1 = new System.Windows.Forms.TextBox();
-            this.textBox3 = new System.Windows.Forms.TextBox();
+            this.tbAddPrinters = new System.Windows.Forms.TextBox();
+            this.tbDeletePrinters = new System.Windows.Forms.TextBox();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -134,19 +134,19 @@
             this.textBox2.Size = new System.Drawing.Size(96, 20);
             this.textBox2.TabIndex = 7;
             // 
-            // textBox1
+            // tbAddPrinters
             // 
-            this.textBox1.Location = new System.Drawing.Point(271, 37);
-            this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(184, 20);
-            this.textBox1.TabIndex = 8;
+            this.tbAddPrinters.Location = new System.Drawing.Point(271, 37);
+            this.tbAddPrinters.Name = "tbAddPrinters";
+            this.tbAddPrinters.Size = new System.Drawing.Size(184, 20);
+            this.tbAddPrinters.TabIndex = 8;
             // 
-            // textBox3
+            // tbDeletePrinters
             // 
-            this.textBox3.Location = new System.Drawing.Point(140, 90);
-            this.textBox3.Name = "textBox3";
-            this.textBox3.Size = new System.Drawing.Size(314, 20);
-            this.textBox3.TabIndex = 9;
+            this.tbDeletePrinters.Location = new System.Drawing.Point(140, 90);
+            this.tbDeletePrinters.Name = "tbDeletePrinters";
+            this.tbDeletePrinters.Size = new System.Drawing.Size(314, 20);
+            this.tbDeletePrinters.TabIndex = 9;
             // 
             // menuStrip1
             // 
@@ -331,8 +331,8 @@
             this.Controls.Add(this.btnRun);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.menuStrip1);
-            this.Controls.Add(this.textBox3);
-            this.Controls.Add(this.textBox1);
+            this.Controls.Add(this.tbDeletePrinters);
+            this.Controls.Add(this.tbAddPrinters);
             this.Controls.Add(this.textBox2);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.label3);
@@ -363,8 +363,8 @@
         private System.Windows.Forms.Label label4;
         private System.ComponentModel.BackgroundWorker bwUserImport;
         private System.Windows.Forms.TextBox textBox2;
-        private System.Windows.Forms.TextBox textBox1;
-        private System.Windows.Forms.TextBox textBox3;
+        private System.Windows.Forms.TextBox tbAddPrinters;
+        private System.Windows.Forms.TextBox tbDeletePrinters;
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
