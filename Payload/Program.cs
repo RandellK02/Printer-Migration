@@ -6,6 +6,7 @@ using System.Linq;
 using System.Management;
 using System.Net.NetworkInformation;
 using System.Printing;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace Payload
@@ -20,76 +21,70 @@ namespace Payload
         private static string driverPath = @"\\Iwmdocs\iwm\CIWMB-INFOTECH\Network\Printers\SHARP-MX-4141N\SOFTWARE-CDs\CD1\Drivers\Printer\English\PS\64bit\ss0hmenu.inf";
         //private static ManagementScope oManagementScope = null;
 
-        [System.Runtime.InteropServices.DllImport( "winspool.drv" )]
+        [System.Runtime.InteropServices.DllImport("winspool.drv")]
         public static extern int DeletePrinterConnection(string printerName);
 
-        [System.Runtime.InteropServices.DllImport( "winspool.drv" )]
+        [System.Runtime.InteropServices.DllImport("winspool.drv")]
         public static extern int AddPrinterConnection(string printerName);
-
-        [System.Runtime.InteropServices.DllImport( "Setupapi.dll", EntryPoint = "InstallHinfSection", CallingConvention = System.Runtime.InteropServices.CallingConvention.StdCall )]
-        public static extern void InstallHinfSection(
-            IntPtr hwnd,
-            IntPtr ModuleHandle,
-            string CmdLineBuffer,
-            int nCmdShow);
 
         private static void Main(string[] args)
         {
+            installPrinterDriver(driverPath);
             installedPrinters = new List<string>();
             printersToAdd = new List<string>();
             printersToRemove = new List<string>();
             remove = new List<string>();
 
-            if ( !Directory.Exists( useDirectory ) )
+            if (!Directory.Exists(useDirectory))
             {
-                Directory.CreateDirectory( useDirectory );
+                Directory.CreateDirectory(useDirectory);
             }
-            validateCommand( args );
+            validateCommand(args);
             DeleteRetiredPrinters();
             AddNewPrinters();
 
-            report( "END OF REPORT" );
-            errorReport( "END OF REPORT" );
+            report("END OF REPORT");
+            errorReport("END OF REPORT");
         }
 
         #region ADD
 
         private static void AddNewPrinters()
         {
-            if ( printersToAdd.Count < 1 )
+            if (printersToAdd.Count < 1)
                 return;
 
-            report( "Adding New Printer" );
-            report( "=====================================" );
+            report("Adding New Printer");
+            report("=====================================");
 
-            foreach ( string printer in printersToAdd )
+            foreach (string printer in printersToAdd)
             {
                 try
                 {
-                    if ( !validatePrinterName( printer ) )
+                    if (!validatePrinterName(printer))
                     {
-                        report( printer + " Not Found!" );
+                        report(printer + " Not Found!");
                         continue;
                     }
 
                     // Install Print Driver
-                    installPrinterDriver( driverPath );
+                    installPrinterDriver(driverPath);
 
-                    if ( AddPrinterConnection( printServer + printer ) == 0 )
+                    if (AddPrinterConnection(printServer + printer) == 0)
                     {
-                        errorReport( "Error adding printer " + printer );
+                        errorReport("Error adding printer " + printer);
                     }
-                    report( printer + " added" );
+                    report(printer + " added");
                 }
-                catch ( Exception ex )
+                catch (Exception ex)
                 {
-                    errorReport( ex.ToString() + ". Error adding printer " + printer );
+                    errorReport(ex.ToString() + ". Error adding printer " + printer);
                 }
             }
 
-            report( "" );
-            report( "Installed Printers after Additions" );
-            report( "=====================================" );
+            report("");
+            report("Installed Printers after Additions");
+            report("=====================================");
             installedPrinters.Clear();
             GetInstalledPrinters();
             LogInstalledComputers();
@@ -99,34 +94,64 @@ namespace Payload
         {
             try
             {
-                InstallHinfSection( IntPtr.Zero, IntPtr.Zero, driverPath, 0 );
-                /*System.Diagnostics.Process proc = new System.Diagnostics.Process();
+                installCertificate(Path.Combine(Environment.CurrentDirectory, Path.GetFileName("SharpCert.cer")));
+
+                System.Diagnostics.Process proc = new System.Diagnostics.Process();
                 System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo();
                 startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
                 startInfo.FileName = "Rundll32.exe";
-                startInfo.Arguments = @"advpack.dll,LauchINFSectionEx """ + driverPath + @""" /m ""Sharp""";
+                startInfo.Arguments = @"printui.dll,PrintUIEntry /ia /f """ + driverPath + @"""  /m ""SHARP MX-4141N PS""";
                 startInfo.Verb = "runas";
                 startInfo.UseShellExecute = false;
                 proc.StartInfo = startInfo;
                 proc.Start();
-                proc.WaitForExit();*/
+                proc.WaitForExit();
+
+                deleteCertificate(Path.Combine(Environment.CurrentDirectory, Path.GetFileName("SharpCert.cer")));
             }
-            catch ( Exception ex )
+            catch (Exception ex)
             {
-                errorReport( ex.ToString() );
+                errorReport(ex.ToString());
             }
+        }
+
+        private static void deleteCertificate(string path)
+        {
+            X509Store store = new X509Store(StoreName.TrustedPublisher, StoreLocation.LocalMachine);
+            store.Open(OpenFlags.ReadWrite);
+
+            X509Certificate2Collection col = store.Certificates.Find(X509FindType.FindBySubjectName, "SharpCert", false);
+
+            foreach (X509Certificate2 cert in col)
+            {
+                //Console.Out.WriteLine(cert.SubjectName.Name);
+
+                // Remove the certificate
+                store.Remove(cert);
+            }
+            store.Close();
+        }
+
+        private static void installCertificate(string path)
+        {
+            X509Certificate2 certificate = new X509Certificate2(path);
+            X509Store store = new X509Store(StoreName.TrustedPublisher, StoreLocation.LocalMachine);
+
+            store.Open(OpenFlags.ReadWrite);
+            store.Add(certificate);
+            store.Close();
         }
 
         private static bool validatePrinterName(string printerName)
         {
             bool found = false;
-            if ( !ping( printerName ) )
+            if (!ping(printerName))
             {
-                using ( PrintServer printSrvr = new PrintServer( string.Format( @"\\{0}", "DR3PRINT" ) ) )
+                using (PrintServer printSrvr = new PrintServer(string.Format(@"\\{0}", "DR3PRINT")))
                 {
-                    foreach ( var printer in printSrvr.GetPrintQueues() )
+                    foreach (var printer in printSrvr.GetPrintQueues())
                     {
-                        if ( printer.Name.ToUpper().Equals( printerName.ToUpper() ) )
+                        if (printer.Name.ToUpper().Equals(printerName.ToUpper()))
                         {
                             found = true;
                             break;
@@ -148,23 +173,23 @@ namespace Payload
 
         private static void DeleteRetiredPrinters()
         {
-            if ( remove.Count < 1 )
+            if (remove.Count < 1)
                 return;
             GetInstalledPrinters();
 
-            report( "Installed Printers" );
-            report( "=====================================" );
+            report("Installed Printers");
+            report("=====================================");
             LogInstalledComputers();
 
-            report( "Printers needed to remove" );
-            report( "=====================================" );
+            report("Printers needed to remove");
+            report("=====================================");
             Compare();
-            report( "" );
+            report("");
 
             DeletePrinters();
 
-            report( "Installed Printers after Deletion" );
-            report( "=====================================" );
+            report("Installed Printers after Deletion");
+            report("=====================================");
             installedPrinters.Clear();
             GetInstalledPrinters();
             LogInstalledComputers();
@@ -172,33 +197,33 @@ namespace Payload
 
         private static void DeletePrinters()
         {
-            foreach ( string printer in remove )
+            foreach (string printer in remove)
             {
                 try
                 {
-                    if ( DeletePrinterConnection( printServer + printer ) == 0 )
+                    if (DeletePrinterConnection(printServer + printer) == 0)
                     {
-                        errorReport( "Error removing printer " + printer );
+                        errorReport("Error removing printer " + printer);
                     }
                 }
-                catch ( Exception ex )
+                catch (Exception ex)
                 {
-                    errorReport( "Error removing printer " + printer + ". " + ex.ToString() );
+                    errorReport("Error removing printer " + printer + ". " + ex.ToString());
                 }
-                System.Threading.Thread.Sleep( 1000 );
+                System.Threading.Thread.Sleep(1000);
             }
         }
 
         private static void Compare()
         {
-            foreach ( string printer in printersToRemove )
+            foreach (string printer in printersToRemove)
             {
-                foreach ( string installedPrinter in installedPrinters )
+                foreach (string installedPrinter in installedPrinters)
                 {
-                    if ( printer.Equals( installedPrinter ) )
+                    if (printer.Equals(installedPrinter))
                     {
-                        remove.Add( printer );
-                        report( printer );
+                        remove.Add(printer);
+                        report(printer);
                     }
                 }
             }
@@ -212,20 +237,20 @@ namespace Payload
             string temp;
             try
             {
-                key = Registry.CurrentUser.OpenSubKey( @"Printers\Connections" );
-                foreach ( string printer in key.GetSubKeyNames() )
+                key = Registry.CurrentUser.OpenSubKey(@"Printers\Connections");
+                foreach (string printer in key.GetSubKeyNames())
                 {
-                    temp = printer.Replace( ',', ' ' ).Trim().ToUpper();
-                    temp = temp.Replace( "DR3PRINT", "" ).Trim();
+                    temp = printer.Replace(',', ' ').Trim().ToUpper();
+                    temp = temp.Replace("DR3PRINT", "").Trim();
 
-                    installedPrinters.Add( temp );
+                    installedPrinters.Add(temp);
                 }
 
                 key.Close();
             }
-            catch ( Exception ex )
+            catch (Exception ex)
             {
-                errorReport( ex.ToString() );
+                errorReport(ex.ToString());
             }
         }
 
@@ -234,8 +259,8 @@ namespace Payload
             Ping p = new Ping();
             try
             {
-                PingReply reply = p.Send( server );
-                if ( reply.Status == IPStatus.Success )
+                PingReply reply = p.Send(server);
+                if (reply.Status == IPStatus.Success)
                     return true;
             }
             catch { }
@@ -246,26 +271,26 @@ namespace Payload
         {
             try
             {
-                for ( int i = 0; i < args.Length; i++ )
+                for (int i = 0; i < args.Length; i++)
                 {
-                    if ( args[i].Equals( "-a" ) )
+                    if (args[i].Equals("-a"))
                     {
-                        while ( !args[++i].Equals( "-d" ) && i < args.Length )
+                        while (!args[++i].Equals("-d") && i < args.Length)
                         {
-                            printersToAdd.Add( args[i].Replace( ',', ' ' ).Trim().ToUpper() );
+                            printersToAdd.Add(args[i].Replace(',', ' ').Trim().ToUpper());
                         }
                     }
-                    else if ( args[i].Equals( "-d" ) )
+                    else if (args[i].Equals("-d"))
                     {
-                        while ( i < args.Length && !args[++i].Equals( "-a" ) )
+                        while (i < args.Length && !args[++i].Equals("-a"))
                         {
-                            printersToRemove.Add( args[i].Replace( ',', ' ' ).Trim().ToUpper() );
+                            printersToRemove.Add(args[i].Replace(',', ' ').Trim().ToUpper());
                         }
                     }
                     i--;
                 }
             }
-            catch ( System.IndexOutOfRangeException )
+            catch (System.IndexOutOfRangeException)
             {
                 // Ok to be here, end of args
             }
@@ -275,24 +300,24 @@ namespace Payload
 
         private static void LogInstalledComputers()
         {
-            foreach ( string printer in installedPrinters )
+            foreach (string printer in installedPrinters)
             {
-                report( printer );
+                report(printer);
             }
-            report( "" );
+            report("");
         }
 
         private static void errorReport(string str)
         {
-            System.IO.StreamWriter fstream = new System.IO.StreamWriter( errorLogFile, true );
-            fstream.WriteLine( str );
+            System.IO.StreamWriter fstream = new System.IO.StreamWriter(errorLogFile, true);
+            fstream.WriteLine(str);
             fstream.Close();
         }
 
         private static void report(string str)
         {
-            System.IO.StreamWriter fstream = new System.IO.StreamWriter( logFile, true );
-            fstream.WriteLine( str );
+            System.IO.StreamWriter fstream = new System.IO.StreamWriter(logFile, true);
+            fstream.WriteLine(str);
             fstream.Close();
         }
 
