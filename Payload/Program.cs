@@ -17,13 +17,21 @@ namespace Payload
         private static string logFile = useDirectory + "printer.log";
         private static string errorLogFile = useDirectory + "error.log";
         private static List<string> printersToAdd, printersToRemove, installedPrinters, remove;
-        private static ManagementScope oManagementScope = null;
+        private static string driverPath = @"\\Iwmdocs\iwm\CIWMB-INFOTECH\Network\Printers\SHARP-MX-4141N\SOFTWARE-CDs\CD1\Drivers\Printer\English\PS\64bit\ss0hmenu.inf";
+        //private static ManagementScope oManagementScope = null;
 
         [System.Runtime.InteropServices.DllImport( "winspool.drv" )]
         public static extern int DeletePrinterConnection(string printerName);
 
         [System.Runtime.InteropServices.DllImport( "winspool.drv" )]
         public static extern int AddPrinterConnection(string printerName);
+
+        [System.Runtime.InteropServices.DllImport( "Setupapi.dll", EntryPoint = "InstallHinfSection", CallingConvention = System.Runtime.InteropServices.CallingConvention.StdCall )]
+        public static extern void InstallHinfSection(
+            IntPtr hwnd,
+            IntPtr ModuleHandle,
+            string CmdLineBuffer,
+            int nCmdShow);
 
         private static void Main(string[] args)
         {
@@ -63,6 +71,10 @@ namespace Payload
                         report( printer + " Not Found!" );
                         continue;
                     }
+
+                    // Install Print Driver
+                    installPrinterDriver( driverPath );
+
                     if ( AddPrinterConnection( printServer + printer ) == 0 )
                     {
                         errorReport( "Error adding printer " + printer );
@@ -81,6 +93,28 @@ namespace Payload
             installedPrinters.Clear();
             GetInstalledPrinters();
             LogInstalledComputers();
+        }
+
+        private static void installPrinterDriver(string driverPath)
+        {
+            try
+            {
+                InstallHinfSection( IntPtr.Zero, IntPtr.Zero, driverPath, 0 );
+                /*System.Diagnostics.Process proc = new System.Diagnostics.Process();
+                System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo();
+                startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+                startInfo.FileName = "Rundll32.exe";
+                startInfo.Arguments = @"advpack.dll,LauchINFSectionEx """ + driverPath + @""" /m ""Sharp""";
+                startInfo.Verb = "runas";
+                startInfo.UseShellExecute = false;
+                proc.StartInfo = startInfo;
+                proc.Start();
+                proc.WaitForExit();*/
+            }
+            catch ( Exception ex )
+            {
+                errorReport( ex.ToString() );
+            }
         }
 
         private static bool validatePrinterName(string printerName)
@@ -114,6 +148,8 @@ namespace Payload
 
         private static void DeleteRetiredPrinters()
         {
+            if ( remove.Count < 1 )
+                return;
             GetInstalledPrinters();
 
             report( "Installed Printers" );
@@ -136,9 +172,6 @@ namespace Payload
 
         private static void DeletePrinters()
         {
-            if ( remove.Count < 1 )
-                return;
-
             foreach ( string printer in remove )
             {
                 try
@@ -265,6 +298,7 @@ namespace Payload
 
         #endregion Logs
 
+        /*
         public static bool DeletePrinter(string sPrinterName)
         {
             oManagementScope = new ManagementScope( ManagementPath.DefaultPath );
@@ -287,6 +321,6 @@ namespace Payload
                 }
             }
             return false;
-        }
+        }*/
     }
 }

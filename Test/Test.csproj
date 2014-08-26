@@ -33,7 +33,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="HTMLReportEngine">
-      <HintPath>..\..\..\Documents\HTMLReportEngine_src\bin\Debug\HTMLReportEngine.dll</HintPath>
+      <HintPath>..\HTMLReportEngine.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

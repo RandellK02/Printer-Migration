@@ -74,7 +74,7 @@
             // 
             // openFileDialog1
             // 
-            this.openFileDialog1.Filter = "Text Files|*.txt|CSV Files|*.csv";
+            this.openFileDialog1.Filter = "Excel Files|*.xls*";
             this.openFileDialog1.Title = "User Text File";
             // 
             // txtPath
@@ -181,30 +181,30 @@
             this.groupBox1.Controls.Add(this.pbPingComputers);
             this.groupBox1.Controls.Add(this.pbGenComputers);
             this.groupBox1.Controls.Add(this.pbUserImport);
-            this.groupBox1.Controls.Add(this.label12);
             this.groupBox1.Controls.Add(this.label10);
             this.groupBox1.Controls.Add(this.label9);
+            this.groupBox1.Controls.Add(this.label12);
             this.groupBox1.Controls.Add(this.label8);
             this.groupBox1.Controls.Add(this.label7);
             this.groupBox1.Controls.Add(this.label6);
             this.groupBox1.Controls.Add(this.label5);
             this.groupBox1.Location = new System.Drawing.Point(31, 170);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(424, 253);
+            this.groupBox1.Size = new System.Drawing.Size(424, 250);
             this.groupBox1.TabIndex = 12;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Details";
             // 
             // pbReport
             // 
-            this.pbReport.Location = new System.Drawing.Point(160, 208);
+            this.pbReport.Location = new System.Drawing.Point(160, 177);
             this.pbReport.Name = "pbReport";
             this.pbReport.Size = new System.Drawing.Size(258, 23);
             this.pbReport.TabIndex = 14;
             // 
             // pbCleanUp
             // 
-            this.pbCleanUp.Location = new System.Drawing.Point(160, 178);
+            this.pbCleanUp.Location = new System.Drawing.Point(160, 206);
             this.pbCleanUp.Name = "pbCleanUp";
             this.pbCleanUp.Size = new System.Drawing.Size(258, 23);
             this.pbCleanUp.TabIndex = 13;
@@ -247,7 +247,7 @@
             // label12
             // 
             this.label12.AutoSize = true;
-            this.label12.Location = new System.Drawing.Point(15, 210);
+            this.label12.Location = new System.Drawing.Point(15, 179);
             this.label12.Name = "label12";
             this.label12.Size = new System.Drawing.Size(94, 13);
             this.label12.TabIndex = 7;
@@ -256,7 +256,7 @@
             // label10
             // 
             this.label10.AutoSize = true;
-            this.label10.Location = new System.Drawing.Point(16, 182);
+            this.label10.Location = new System.Drawing.Point(16, 210);
             this.label10.Name = "label10";
             this.label10.Size = new System.Drawing.Size(51, 13);
             this.label10.TabIndex = 5;
