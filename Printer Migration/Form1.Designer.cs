@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.label1 = new System.Windows.Forms.Label();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.txtPath = new System.Windows.Forms.TextBox();
@@ -50,9 +51,9 @@
             this.pbPingComputers = new System.Windows.Forms.ProgressBar();
             this.pbGenComputers = new System.Windows.Forms.ProgressBar();
             this.pbUserImport = new System.Windows.Forms.ProgressBar();
-            this.label12 = new System.Windows.Forms.Label();
             this.label10 = new System.Windows.Forms.Label();
             this.label9 = new System.Windows.Forms.Label();
+            this.label12 = new System.Windows.Forms.Label();
             this.label8 = new System.Windows.Forms.Label();
             this.label7 = new System.Windows.Forms.Label();
             this.label6 = new System.Windows.Forms.Label();
@@ -68,9 +69,9 @@
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(28, 66);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(105, 13);
+            this.label1.Size = new System.Drawing.Size(106, 13);
             this.label1.TabIndex = 0;
-            this.label1.Text = "Path to users .txt file:";
+            this.label1.Text = "Path to users .xls file:";
             // 
             // openFileDialog1
             // 
@@ -244,15 +245,6 @@
             this.pbUserImport.Size = new System.Drawing.Size(258, 23);
             this.pbUserImport.TabIndex = 8;
             // 
-            // label12
-            // 
-            this.label12.AutoSize = true;
-            this.label12.Location = new System.Drawing.Point(15, 179);
-            this.label12.Name = "label12";
-            this.label12.Size = new System.Drawing.Size(94, 13);
-            this.label12.TabIndex = 7;
-            this.label12.Text = "Generating Report";
-            // 
             // label10
             // 
             this.label10.AutoSize = true;
@@ -270,6 +262,15 @@
             this.label9.Size = new System.Drawing.Size(95, 13);
             this.label9.TabIndex = 4;
             this.label9.Text = "Executing Payload";
+            // 
+            // label12
+            // 
+            this.label12.AutoSize = true;
+            this.label12.Location = new System.Drawing.Point(15, 183);
+            this.label12.Name = "label12";
+            this.label12.Size = new System.Drawing.Size(94, 13);
+            this.label12.TabIndex = 7;
+            this.label12.Text = "Generating Report";
             // 
             // label8
             // 
@@ -340,9 +341,10 @@
             this.Controls.Add(this.btnBrowse);
             this.Controls.Add(this.txtPath);
             this.Controls.Add(this.label1);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "Form1";
-            this.Text = "Form1";
+            this.Text = "Printer Migration";
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
             this.groupBox1.ResumeLayout(false);
