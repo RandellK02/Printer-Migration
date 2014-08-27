@@ -15,6 +15,7 @@ namespace Payload
     internal class Program
     {
         private static string printServer = @"\\DR3PRINT\";
+        private static string printServer2 = @"\\DR3PRINT.ITSERVICES.NETWORK\";
         private static string useDirectory = @"C:\Printer_Migration\";
         private static string logFile = useDirectory + "printer.log";
         private static string errorLogFile = useDirectory + "error.log";
@@ -247,7 +248,10 @@ namespace Payload
                 {
                     if ( DeletePrinterConnection( printServer + printer ) == 0 )
                     {
-                        errorReport( "Error removing printer " + printer );
+                        if ( DeletePrinterConnection( printServer2 + printer ) == 0 )
+                        {
+                            errorReport( "Error removing printer " + printer );
+                        }
                     }
                 }
                 catch ( Exception ex )
