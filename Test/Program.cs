@@ -26,12 +26,13 @@ namespace Test
             dtUsers.Columns.Add( "sAdd", typeof( bool ) );
             dtUsers.Columns.Add( "offline", typeof( bool ) );
             dtUsers.Columns.Add( "Online", typeof( bool ) );
+            dtUsers.Columns.Add( "project", typeof( int ) );
 
             foreach ( string user in users )
             {
-                dtUsers.Rows.Add( user, retiredPrinter, successfulDelete, sAdd, offline, online );
+                dtUsers.Rows.Add( user, retiredPrinter, successfulDelete, sAdd, offline, online, 1 );
             }
-            dtUsers.Rows.Add( users[0], retiredPrinter, successfulDelete, sAdd, offline = true, online = false );
+
             ds.Tables.Add( dtUsers );
             ds.WriteXml( path + "source.xml" );
 
@@ -41,10 +42,16 @@ namespace Test
             report.ReportTitle = "Printer Migration Report";
             report.ReportSource = copy;
 
+            report.IncludeTotal = true;
+            report.TotalFields.Add( "project" );
+
             Section release = new Section( "Online", "Online: ", Color.Aqua );
+            release.IncludeTotal = true;
             Section id = new Section( "User", "User: " );
+            id.IncludeTotal = true;
             release.SubSection = id;
             report.Sections.Add( release );
+            report.ReportFields.Add( new Field( "project", "ID", 1, ALIGN.LEFT ) );
             report.ReportFields.Add( new Field( "retiredPrinter", "Retired Printer", 12, ALIGN.LEFT ) );
             report.ReportFields.Add( new Field( "successfulDelete", "Deletion Successful", 12, ALIGN.LEFT ) );
             report.ReportFields.Add( new Field( "sAdd", "Add Successful", 12, ALIGN.LEFT ) );

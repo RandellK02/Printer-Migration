@@ -2,6 +2,7 @@
 using System;
 using System.ComponentModel;
 using System.Data;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
@@ -12,16 +13,15 @@ namespace Printer_Migration
 {
     public partial class Form1 : Form
     {
-        public Stream myStream;
         private static string useDirectory = System.Environment.GetFolderPath( Environment.SpecialFolder.CommonDocuments ) + @"\Printer_Migration\";
         private static string logFile = useDirectory + "printer.log";
         private static string errorLogFile = useDirectory + "error.log";
+        private static DataSet set = null;
 
         public Form1()
         {
             InitializeComponent();
-            myStream = null;
-
+            set = new DataSet( "Printer DataSet" );
             if ( !Directory.Exists( useDirectory ) )
             {
                 Directory.CreateDirectory( useDirectory );
@@ -166,6 +166,10 @@ namespace Printer_Migration
                     pbExecPayload.Value = e.ProgressPercentage;
                     break;
 
+                case "GENERATEREPORT":
+                    pbReport.Value = e.ProgressPercentage;
+                    break;
+
                 case "DELETEPAYLOAD":
                     pbCleanUp.Value = e.ProgressPercentage;
                     break;
@@ -177,9 +181,13 @@ namespace Printer_Migration
             BackgroundWorker worker = sender as BackgroundWorker;
             generateComputerNames( worker );
             pingComputers( worker );
+            System.Threading.Thread.Sleep( 1000 );
             transferPayload( worker );
+            System.Threading.Thread.Sleep( 1000 );
             executePayload( worker );
-            //generateReport( worker );
+            System.Threading.Thread.Sleep( 5000 );
+            generateReport( worker );
+            System.Threading.Thread.Sleep( 1000 );
             removePayload( worker );
 
             report( "Offline Computers" );
@@ -195,12 +203,13 @@ namespace Printer_Migration
             int progress = 0;
             double realProgress = 0;
 
+            System.Threading.Thread.Sleep( 10000 );
             foreach ( string computer in Globals.onlineComputers )
             {
                 try
                 {
-                    System.Threading.Thread.Sleep( 3000 );
                     Directory.Delete( @"\\" + computer + @"\C$\Users\Public\Documents\Printer_Migration", true );
+                    Directory.Delete( @"\\" + computer + @"\C$\\Printer_Migration", true );
                 }
                 catch ( Exception ex )
                 {
@@ -211,13 +220,102 @@ namespace Printer_Migration
                     realProgress += (100f / Globals.onlineComputers.Count);
                     progress = (int)Math.Round( realProgress );
                     worker.ReportProgress( progress, "DELETEPAYLOAD" );
+                    System.Threading.Thread.Sleep( 250 );
                 }
             }
         }
 
         private void generateReport(BackgroundWorker worker)
         {
-            throw new NotImplementedException();
+            int progress = 0;
+            double realProgress = 0;
+            DataTable build = new DataTable( "Printer" );
+            build.Columns.Add( "User" );
+            build.Columns.Add( "RetiredPrinters" );
+            build.Columns.Add( "DeletionSuccessful" );
+            build.Columns.Add( "AddPrinters" );
+            build.Columns.Add( "AdditionSuccessful" );
+            build.Columns.Add( "Status" );
+            build.Columns.Add( "Errors" );
+            DataTable table = new DataTable( "Printer" );
+            table.Columns.Add( "User" );
+            table.Columns.Add( "RetiredPrinters" );
+            table.Columns.Add( "DeletionSuccessful" );
+            table.Columns.Add( "AddPrinters" );
+            table.Columns.Add( "AdditionSuccessful" );
+            table.Columns.Add( "Status" );
+            table.Columns.Add( "Errors" );
+            foreach ( string computer in Globals.onlineComputers )
+            {
+                try
+                {
+                    table.ReadXml( @"C:\Users\Public\Documents\PrinterLogs\" + computer + @"\table.xml" );
+                    build.Merge( table );
+                }
+                catch ( Exception ex )
+                {
+                    errorReport( ex.ToString() + ". Error generating report for " + computer );
+                    table.Rows.Add( computer, "---", "---", "---", "---", "ERRORS", "Couldnt retrieve resulting xml file" );
+                    build.Merge( table );
+                }
+                finally
+                {
+                    realProgress += (100f / Globals.computers.Count);
+                    progress = (int)Math.Round( realProgress );
+                    worker.ReportProgress( progress, "GENERATEREPORT" );
+                    table.Rows.Clear();
+                }
+            }
+
+            foreach ( string computer in Globals.offlineComputers )
+            {
+                table.Rows.Add( computer, "---", "---", "---", "---", "OFFLINE", "Computer is offline" );
+                build.Merge( table );
+
+                realProgress += (100f / Globals.computers.Count);
+                progress = (int)Math.Round( realProgress );
+                worker.ReportProgress( progress, "GENERATEREPORT" );
+                table.Rows.Clear();
+            }
+
+            build.Columns.Add( "On#", typeof( int ) );
+            build.Columns.Add( "Off#", typeof( int ) );
+            build.Columns.Add( "Error#", typeof( int ) );
+            foreach ( DataRow row in build.Rows )
+            {
+                if ( row["Status"].Equals( "ONLINE" ) )
+                    row["On#"] = 1;
+                if ( row["Status"].Equals( "OFFLINE" ) )
+                    row["Off#"] = 1;
+                if ( row["Status"].Equals( "ERRORS" ) )
+                    row["Error#"] = 1;
+            }
+
+            set.Tables.Add( build );
+            Report report = new Report();
+            report.ReportTitle = "Printer Migration Report";
+            report.ReportSource = set;
+
+            Section section = new Section( "Status", "", Color.Aqua );
+            section.IncludeTotal = true;
+            report.Sections.Add( section );
+
+            report.TotalFields.Add( "On#" );
+            report.TotalFields.Add( "Off#" );
+            report.TotalFields.Add( "Error#" );
+            report.IncludeTotal = true;
+
+            report.ReportFields.Add( new Field( "User", "User", 12, ALIGN.LEFT ) );
+            report.ReportFields.Add( new Field( "RetiredPrinters", "Removed Printers", 12, ALIGN.LEFT ) );
+            report.ReportFields.Add( new Field( "DeletionSuccessful", "Removal Successful", 12, ALIGN.LEFT ) );
+            report.ReportFields.Add( new Field( "AddPrinters", "Added Printers", 12, ALIGN.LEFT ) );
+            report.ReportFields.Add( new Field( "AdditionSuccessful", "Addition Successful", 12, ALIGN.LEFT ) );
+            report.ReportFields.Add( new Field( "Errors", "Errors", 12, ALIGN.LEFT ) );
+            report.ReportFields.Add( new Field( "On#", "On#", 1, ALIGN.LEFT ) );
+            report.ReportFields.Add( new Field( "Off#", "Off#", 1, ALIGN.LEFT ) );
+            report.ReportFields.Add( new Field( "Error#", "Error#", 1, ALIGN.LEFT ) );
+
+            report.SaveReport( useDirectory + "Report.htm" );
         }
 
         private void executePayload(BackgroundWorker worker)
@@ -237,14 +335,19 @@ namespace Printer_Migration
                 }
             }
 
-            System.Threading.Thread.Sleep( 10000 );
+            System.Diagnostics.Process proc = new System.Diagnostics.Process();
+            System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo();
             foreach ( string computer in Globals.onlineComputers )
             {
                 try
                 {
-                    System.Diagnostics.Process.Start( path, "-nowait -c " + computer + " -k " + useDirectory + @"run.bat -p ""-a " +
-                                                            tbAddPrinters.Text + " -d " + tbDeletePrinters.Text + @"""" );
-                    System.Threading.Thread.Sleep( 1300 );
+                    startInfo.FileName = path;
+                    startInfo.Arguments = "-nowait -c " + computer + " -k " + useDirectory + @"run.bat -p ""-a " +
+                                                            tbAddPrinters.Text + " -d " + tbDeletePrinters.Text + @"""";
+                    startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+                    proc.StartInfo = startInfo;
+                    proc.Start();
+                    System.Threading.Thread.Sleep( 900 );
                 }
                 catch ( Exception ex )
                 {
@@ -252,10 +355,19 @@ namespace Printer_Migration
                 }
                 finally
                 {
-                    realProgress += (100f / Globals.onlineComputers.Count);
+                    realProgress += ((100f / Globals.onlineComputers.Count)) / 2;
                     progress = (int)Math.Round( realProgress );
                     worker.ReportProgress( progress, "EXECUTEPAYLOAD" );
                 }
+            }
+
+            // kill some time to let computers finish, why I divide by 2 on real progress
+            foreach ( string waitComputer in Globals.onlineComputers )
+            {
+                realProgress += ((100f / Globals.onlineComputers.Count)) / 2;
+                progress = (int)Math.Round( realProgress );
+                worker.ReportProgress( progress, "EXECUTEPAYLOAD" );
+                System.Threading.Thread.Sleep( 2000 );
             }
         }
 
