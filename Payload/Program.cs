@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Drawing.Printing;
 using System.IO;
 using System.Linq;
 using System.Management;
@@ -23,8 +24,8 @@ namespace Payload
         private static List<string> printersToAdd, printersToRemove, installedPrinters, remove;
         private static string driverPath = @"\\Iwmdocs\iwm\CIWMB-INFOTECH\Network\Printers\SHARP-MX-4141N\SOFTWARE-CDs\CD1\Drivers\Printer\English\PS\64bit\ss0hmenu.inf";
         private static DataTable table = null;
-        private static bool successfulDelete, successfulAdd, error;
-        private static string errorString;
+        private static bool successfulDelete, successfulAdd, error, defaultDeleted;
+        private static string errorString, defaultPrinter;
 
         [System.Runtime.InteropServices.DllImport( "winspool.drv" )]
         public static extern int DeletePrinterConnection(string printerName);
@@ -32,8 +33,20 @@ namespace Payload
         [System.Runtime.InteropServices.DllImport( "winspool.drv" )]
         public static extern int AddPrinterConnection(string printerName);
 
+        [System.Runtime.InteropServices.DllImport( "winspool.drv" )]
+        public static extern bool SetDefaultPrinter(string printerName);
+
         private static void Main(string[] args)
         {
+            PrinterSettings settings = new PrinterSettings();
+            foreach ( string name in PrinterSettings.InstalledPrinters )
+            {
+                settings.PrinterName = name;
+                if ( settings.IsDefaultPrinter )
+                {
+                    defaultPrinter = name;
+                }
+            }
             installedPrinters = new List<string>();
             printersToAdd = new List<string>();
             printersToRemove = new List<string>();
@@ -246,6 +259,14 @@ namespace Payload
                         errorReport( "Error adding printer " + printer );
                     }
                     report( printer + " added" );
+
+                    if ( defaultDeleted )
+                    {
+                        if ( !SetDefaultPrinter( printServer + printer ) )
+                            report( "Setting " + printer + " to default failed!" );
+                        else
+                            report( printer + "set to default." );
+                    }
                 }
                 catch ( Exception ex )
                 {
@@ -367,6 +388,7 @@ namespace Payload
         private static void DeletePrinters()
         {
             successfulDelete = true;
+            defaultDeleted = false;
             foreach ( string printer in remove )
             {
                 try
@@ -377,6 +399,16 @@ namespace Payload
                         {
                             successfulDelete = false;
                             errorReport( "Error removing printer " + printer );
+                        }
+                    }
+
+                    if ( successfulDelete )
+                    {
+                        if ( defaultPrinter.Equals( printServer + printer, StringComparison.InvariantCultureIgnoreCase ) ||
+                           defaultPrinter.Equals( printServer2 + printer, StringComparison.InvariantCultureIgnoreCase ) )
+                        {
+                            report( "Default Printer deleted!" );
+                            defaultDeleted = true;
                         }
                     }
                 }
