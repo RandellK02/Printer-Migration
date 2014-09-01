@@ -18,9 +18,9 @@ namespace Payload
     {
         private static string printServer = @"\\DR3PRINT\";
         private static string printServer2 = @"\\DR3PRINT.ITSERVICES.NETWORK\";
-        private static string useDirectory = @"C:\Printer_Migration\";
-        private static string logFile = useDirectory + "printer.log";
-        private static string errorLogFile = useDirectory + "error.log";
+        private static string useDirectory;
+        private static string logFile;
+        private static string errorLogFile;
         private static List<string> printersToAdd, printersToRemove, installedPrinters, remove;
         private static string driverPath = @"\\Iwmdocs\iwm\CIWMB-INFOTECH\Network\Printers\SHARP-MX-4141N\SOFTWARE-CDs\CD1\Drivers\Printer\English\PS\64bit\ss0hmenu.inf";
         private static DataTable table = null;
@@ -38,6 +38,10 @@ namespace Payload
 
         private static void Main(string[] args)
         {
+            useDirectory = @"C:\Printer_Migration\";
+            logFile = useDirectory + "printer.log";
+            errorLogFile = useDirectory + "error.log";
+
             PrinterSettings settings = new PrinterSettings();
             foreach ( string name in PrinterSettings.InstalledPrinters )
             {
@@ -70,7 +74,7 @@ namespace Payload
             DeleteRetiredPrinters();
             AddNewPrinters();
             generateTable();
-            moveLogs();
+            //moveLogs();
 
             report( "END OF REPORT" );
             errorReport( "END OF REPORT" );
@@ -169,14 +173,21 @@ namespace Payload
                 errors = "";
             }
 
-            table.Rows.Add( user, removeList, deletion, addList, addition, status, errors );
-            table.WriteXml( useDirectory + "table.xml", XmlWriteMode.WriteSchema );
+            try
+            {
+                table.Rows.Add( user, removeList, deletion, addList, addition, status, errors );
+                table.WriteXml( useDirectory + "table.xml", XmlWriteMode.WriteSchema );
+            }
+            catch ( Exception ex )
+            {
+                errorReport( ex.ToString() );
+            }
         }
 
         private static void moveLogs()
         {
             //string username = Environment.UserName;
-            string myComp = @"\\W8-rkoen\C$\Users\Public\Documents\PrinterLogs\" + System.Environment.MachineName;
+            string myComp = @"S:\TEMP\DeleteIn7Days\PrinterLogs\" + System.Environment.MachineName;
             DirectoryCopy( useDirectory, myComp, true );
         }
 

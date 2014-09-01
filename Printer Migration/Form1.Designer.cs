@@ -33,11 +33,9 @@
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.txtPath = new System.Windows.Forms.TextBox();
             this.btnBrowse = new System.Windows.Forms.Button();
-            this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.bwUserImport = new System.ComponentModel.BackgroundWorker();
-            this.textBox2 = new System.Windows.Forms.TextBox();
             this.tbAddPrinters = new System.Windows.Forms.TextBox();
             this.tbDeletePrinters = new System.Windows.Forms.TextBox();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
@@ -67,11 +65,11 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(28, 66);
+            this.label1.Location = new System.Drawing.Point(28, 42);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(106, 13);
+            this.label1.Size = new System.Drawing.Size(51, 13);
             this.label1.TabIndex = 0;
-            this.label1.Text = "Path to users .xls file:";
+            this.label1.Text = "User File:";
             // 
             // openFileDialog1
             // 
@@ -80,14 +78,14 @@
             // 
             // txtPath
             // 
-            this.txtPath.Location = new System.Drawing.Point(140, 63);
+            this.txtPath.Location = new System.Drawing.Point(113, 39);
             this.txtPath.Name = "txtPath";
-            this.txtPath.Size = new System.Drawing.Size(234, 20);
+            this.txtPath.Size = new System.Drawing.Size(261, 20);
             this.txtPath.TabIndex = 1;
             // 
             // btnBrowse
             // 
-            this.btnBrowse.Location = new System.Drawing.Point(380, 61);
+            this.btnBrowse.Location = new System.Drawing.Point(380, 37);
             this.btnBrowse.Name = "btnBrowse";
             this.btnBrowse.Size = new System.Drawing.Size(75, 23);
             this.btnBrowse.TabIndex = 2;
@@ -95,32 +93,23 @@
             this.btnBrowse.UseVisualStyleBackColor = true;
             this.btnBrowse.Click += new System.EventHandler(this.btnBrowse_Click);
             // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(29, 39);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(43, 13);
-            this.label2.TabIndex = 3;
-            this.label2.Text = "Floor #:";
-            // 
             // label3
             // 
             this.label3.AutoSize = true;
             this.label3.Location = new System.Drawing.Point(28, 94);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(82, 13);
+            this.label3.Size = new System.Drawing.Size(79, 13);
             this.label3.TabIndex = 4;
-            this.label3.Text = "Retired Printers:";
+            this.label3.Text = "Delete Printers:";
             // 
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(191, 39);
+            this.label4.Location = new System.Drawing.Point(28, 68);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(74, 13);
+            this.label4.Size = new System.Drawing.Size(67, 13);
             this.label4.TabIndex = 5;
-            this.label4.Text = "Printer to Add:";
+            this.label4.Text = "Add Printers:";
             // 
             // bwUserImport
             // 
@@ -128,25 +117,22 @@
             this.bwUserImport.DoWork += new System.ComponentModel.DoWorkEventHandler(this.bwUserImport_DoWork);
             this.bwUserImport.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.bwUserImport_ProgressChanged);
             // 
-            // textBox2
-            // 
-            this.textBox2.Location = new System.Drawing.Point(82, 36);
-            this.textBox2.Name = "textBox2";
-            this.textBox2.Size = new System.Drawing.Size(96, 20);
-            this.textBox2.TabIndex = 7;
-            // 
             // tbAddPrinters
             // 
-            this.tbAddPrinters.Location = new System.Drawing.Point(271, 37);
+            this.tbAddPrinters.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
+            this.tbAddPrinters.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.CustomSource;
+            this.tbAddPrinters.Location = new System.Drawing.Point(113, 64);
             this.tbAddPrinters.Name = "tbAddPrinters";
-            this.tbAddPrinters.Size = new System.Drawing.Size(184, 20);
+            this.tbAddPrinters.Size = new System.Drawing.Size(341, 20);
             this.tbAddPrinters.TabIndex = 8;
             // 
             // tbDeletePrinters
             // 
-            this.tbDeletePrinters.Location = new System.Drawing.Point(140, 90);
+            this.tbDeletePrinters.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
+            this.tbDeletePrinters.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.CustomSource;
+            this.tbDeletePrinters.Location = new System.Drawing.Point(113, 90);
             this.tbDeletePrinters.Name = "tbDeletePrinters";
-            this.tbDeletePrinters.Size = new System.Drawing.Size(314, 20);
+            this.tbDeletePrinters.Size = new System.Drawing.Size(341, 20);
             this.tbDeletePrinters.TabIndex = 9;
             // 
             // menuStrip1
@@ -189,7 +175,7 @@
             this.groupBox1.Controls.Add(this.label7);
             this.groupBox1.Controls.Add(this.label6);
             this.groupBox1.Controls.Add(this.label5);
-            this.groupBox1.Location = new System.Drawing.Point(31, 170);
+            this.groupBox1.Location = new System.Drawing.Point(31, 161);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(424, 250);
             this.groupBox1.TabIndex = 12;
@@ -310,7 +296,7 @@
             // 
             // btnRun
             // 
-            this.btnRun.Location = new System.Drawing.Point(379, 128);
+            this.btnRun.Location = new System.Drawing.Point(379, 121);
             this.btnRun.Name = "btnRun";
             this.btnRun.Size = new System.Drawing.Size(75, 23);
             this.btnRun.TabIndex = 13;
@@ -328,16 +314,14 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(491, 453);
+            this.ClientSize = new System.Drawing.Size(491, 430);
             this.Controls.Add(this.btnRun);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.menuStrip1);
             this.Controls.Add(this.tbDeletePrinters);
             this.Controls.Add(this.tbAddPrinters);
-            this.Controls.Add(this.textBox2);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.label3);
-            this.Controls.Add(this.label2);
             this.Controls.Add(this.btnBrowse);
             this.Controls.Add(this.txtPath);
             this.Controls.Add(this.label1);
@@ -360,11 +344,9 @@
         private System.Windows.Forms.OpenFileDialog openFileDialog1;
         private System.Windows.Forms.TextBox txtPath;
         private System.Windows.Forms.Button btnBrowse;
-        private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label label4;
         private System.ComponentModel.BackgroundWorker bwUserImport;
-        private System.Windows.Forms.TextBox textBox2;
         private System.Windows.Forms.TextBox tbAddPrinters;
         private System.Windows.Forms.TextBox tbDeletePrinters;
         private System.Windows.Forms.MenuStrip menuStrip1;

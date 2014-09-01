@@ -1,11 +1,13 @@
 ﻿using HTMLReportEngine;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
+using System.Printing;
 using System.Windows.Forms;
 using Excel = Microsoft.Office.Interop.Excel;
 
@@ -17,6 +19,8 @@ namespace Printer_Migration
         private static string logFile = useDirectory + "printer.log";
         private static string errorLogFile = useDirectory + "error.log";
         private static DataSet set = null;
+        private static PrintServer server;
+        private static PrintQueueCollection printersCollection;
 
         public Form1()
         {
@@ -26,6 +30,18 @@ namespace Printer_Migration
             {
                 Directory.CreateDirectory( useDirectory );
             }
+            server = new PrintServer( @"\\DR3PRINT" );
+            printersCollection = server.GetPrintQueues();
+
+            foreach ( PrintQueue printer in printersCollection )
+            {
+                Globals.printersOnServer.Add( printer.Name );
+            }
+
+            AutoCompleteStringCollection source = new AutoCompleteStringCollection();
+            source.AddRange( Globals.printersOnServer.ToArray() );
+            tbAddPrinters.AutoCompleteCustomSource = source;
+            tbDeletePrinters.AutoCompleteCustomSource = source;
         }
 
         private void btnBrowse_Click(object sender, EventArgs e)
@@ -249,7 +265,9 @@ namespace Printer_Migration
             {
                 try
                 {
-                    table.ReadXml( @"C:\Users\Public\Documents\PrinterLogs\" + computer + @"\table.xml" );
+                    DirectoryCopy( @"\\" + computer + @"\C$\Printer_Migration\", useDirectory + @"PrinterLogs\" + computer, true );
+                    table.ReadXml( useDirectory + @"PrinterLogs\" + computer + @"\table.xml" );
+                    //table.ReadXml( @"S:\TEMP\DeleteIn7Days\PrinterLogs\" + computer + @"\table.xml" );
                     build.Merge( table );
                 }
                 catch ( Exception ex )
@@ -264,6 +282,7 @@ namespace Printer_Migration
                     progress = (int)Math.Round( realProgress );
                     worker.ReportProgress( progress, "GENERATEREPORT" );
                     table.Rows.Clear();
+                    System.Threading.Thread.Sleep( 1000 );
                 }
             }
 
@@ -377,6 +396,8 @@ namespace Printer_Migration
             Stream myStream;
             int progress = 0;
             double realProgress = 0;
+            List<String> remove = new List<String>();
+
             foreach ( string computer in Globals.onlineComputers )
             {
                 try
@@ -412,14 +433,22 @@ namespace Printer_Migration
                 catch ( Exception ex )
                 {
                     errorReport( ex.ToString() + ". Error copying payload to " + computer );
-                    Globals.onlineComputers.Remove( computer );
-                    Globals.offlineComputers.Add( computer );
+                    remove.Add( computer );
                 }
                 finally
                 {
                     realProgress += (100f / Globals.onlineComputers.Count);
                     progress = (int)Math.Round( realProgress );
                     worker.ReportProgress( progress, "TRANSFERPAYLOAD" );
+                }
+            }
+
+            if ( remove.Count > 0 )
+            {
+                foreach ( string computerRemove in remove )
+                {
+                    Globals.onlineComputers.Remove( computerRemove );
+                    Globals.offlineComputers.Add( computerRemove );
                 }
             }
         }
@@ -560,6 +589,59 @@ namespace Printer_Migration
                     MessageBox.Show( "Error: Could not read file from disk. Original error: " + ex.Message );
                 }
             }
+        }
+
+        private static void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs)
+        {
+            report( "Moving logs to " + destDirName );
+            try
+            {
+                // Get the subdirectories for the specified directory.
+                DirectoryInfo dir = new DirectoryInfo( sourceDirName );
+
+                DirectoryInfo[] dirs = dir.GetDirectories();
+
+                if ( !dir.Exists )
+                {
+                    errorReport(
+                        "Source directory does not exist or could not be found: "
+
+                        + sourceDirName );
+                }
+
+                // If the destination directory doesn't exist, create it.
+                if ( !Directory.Exists( destDirName ) )
+                {
+                    Directory.CreateDirectory( destDirName );
+                }
+
+                // Get the files in the directory and copy them to the new location.
+                FileInfo[] files = dir.GetFiles();
+
+                foreach ( FileInfo file in files )
+                {
+                    string temppath = Path.Combine( destDirName, file.Name );
+                    file.CopyTo( temppath, false );
+                }
+
+                // If copying subdirectories, copy them and their contents to new location.
+                if ( copySubDirs )
+                {
+                    foreach ( DirectoryInfo subdir in dirs )
+                    {
+                        string temppath = Path.Combine( destDirName, subdir.Name );
+                        DirectoryCopy( subdir.FullName, temppath, copySubDirs );
+                    }
+                }
+            }
+            catch ( Exception ex )
+            {
+                errorReport( ex.ToString() );
+            }
+        }
+
+        private void floorTextBox_Leave(object sender, EventArgs e)
+        {
         }
     }
 }

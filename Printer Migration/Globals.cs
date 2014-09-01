@@ -13,6 +13,7 @@ namespace Printer_Migration
         public static List<String> computers = new List<String>();
         public static List<String> onlineComputers = new List<String>();
         public static List<String> offlineComputers = new List<String>();
+        public static List<String> printersOnServer = new List<String>();
         public static string userXLSPath;
     }
 }
