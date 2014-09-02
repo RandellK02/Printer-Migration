@@ -2,6 +2,7 @@
 using System;
 using System.ComponentModel;
 using System.Data;
+using System.Data.SqlClient;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -14,7 +15,7 @@ namespace Printer_Migration
     // Database Version
     public partial class Form1 : Form
     {
-        private static string useDirectory = System.Environment.GetFolderPath( Environment.SpecialFolder.CommonDocuments ) + @"\Printer_Migration\";
+        private static string useDirectory = System.Environment.GetFolderPath(Environment.SpecialFolder.CommonDocuments) + @"\Printer_Migration\";
         private static string logFile = useDirectory + "printer.log";
         private static string errorLogFile = useDirectory + "error.log";
         private static DataSet set = null;
@@ -22,28 +23,29 @@ namespace Printer_Migration
         public Form1()
         {
             InitializeComponent();
-            set = new DataSet( "Printer DataSet" );
-            if ( !Directory.Exists( useDirectory ) )
+
+            set = new DataSet("Printer DataSet");
+            if (!Directory.Exists(useDirectory))
             {
-                Directory.CreateDirectory( useDirectory );
+                Directory.CreateDirectory(useDirectory);
             }
         }
 
         private void btnBrowse_Click(object sender, EventArgs e)
         {
-            if ( openFileDialog1.ShowDialog() == DialogResult.OK )
+            if (openFileDialog1.ShowDialog() == DialogResult.OK)
             {
                 try
                 {
                     Globals.userXLSPath = openFileDialog1.FileName;
-                    if ( !bwUserImport.IsBusy )
+                    if (!bwUserImport.IsBusy)
                     {
                         bwUserImport.RunWorkerAsync();
                     }
                 }
-                catch ( Exception ex )
+                catch (Exception ex)
                 {
-                    MessageBox.Show( "Error: Could not read file from disk. Original error: " + ex.Message );
+                    MessageBox.Show("Error: Could not read file from disk. Original error: " + ex.Message);
                 }
             }
         }
@@ -62,26 +64,26 @@ namespace Printer_Migration
                 // Get users from excel worksheet
                 Excel.Application xlApp = new Excel.Application();
                 xlApp.Visible = false;
-                xlWorkBook = xlApp.Workbooks.Open( Globals.userXLSPath );
+                xlWorkBook = xlApp.Workbooks.Open(Globals.userXLSPath);
                 Excel.Worksheet xlWorkSheet = xlWorkBook.Sheets[1];
-                int lastRow = xlWorkSheet.Cells.SpecialCells( Excel.XlCellType.xlCellTypeLastCell ).Row;
-                object[,] MyValues = xlWorkSheet.get_Range( "A1", "A" + lastRow.ToString() ).Value;
+                int lastRow = xlWorkSheet.Cells.SpecialCells(Excel.XlCellType.xlCellTypeLastCell).Row;
+                object[,] MyValues = xlWorkSheet.get_Range("A1", "A" + lastRow.ToString()).Value;
 
                 string user;
-                foreach ( object value in MyValues )
+                foreach (object value in MyValues)
                 {
                     user = value.ToString();
-                    Globals.users.Add( user );
+                    Globals.users.Add(user);
                     realProgress += (100f / lastRow);
-                    progress = (int)Math.Round( realProgress );
-                    worker.ReportProgress( progress );
+                    progress = (int)Math.Round(realProgress);
+                    worker.ReportProgress(progress);
                 }
 
                 xlWorkBook.Close();
             }
-            catch ( Exception ex )
+            catch (Exception ex)
             {
-                MessageBox.Show( ex.ToString() );
+                MessageBox.Show(ex.ToString());
                 xlWorkBook.Close();
             }
 
@@ -140,7 +142,7 @@ namespace Printer_Migration
 
         private void btnRun_Click(object sender, EventArgs e)
         {
-            if ( bwRun.IsBusy != true )
+            if (bwRun.IsBusy != true)
                 bwRun.RunWorkerAsync();
         }
 
@@ -149,7 +151,7 @@ namespace Printer_Migration
         private void bwRun_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
             string what = e.UserState.ToString();
-            switch ( e.UserState.ToString() )
+            switch (e.UserState.ToString())
             {
                 case "GENERATECOMPUTERNAMES":
                     pbGenComputers.Value = e.ProgressPercentage;
@@ -180,22 +182,22 @@ namespace Printer_Migration
         private void bwRun_DoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker worker = sender as BackgroundWorker;
-            generateComputerNames( worker );
-            pingComputers( worker );
-            System.Threading.Thread.Sleep( 1000 );
-            transferPayload( worker );
-            System.Threading.Thread.Sleep( 1000 );
-            executePayload( worker );
-            System.Threading.Thread.Sleep( 5000 );
-            generateReport( worker );
-            System.Threading.Thread.Sleep( 1000 );
-            removePayload( worker );
+            generateComputerNames(worker);
+            pingComputers(worker);
+            System.Threading.Thread.Sleep(1000);
+            transferPayload(worker);
+            System.Threading.Thread.Sleep(1000);
+            executePayload(worker);
+            System.Threading.Thread.Sleep(5000);
+            generateReport(worker);
+            System.Threading.Thread.Sleep(1000);
+            removePayload(worker);
 
-            report( "Offline Computers" );
-            report( "=====================================" );
-            foreach ( string computer in Globals.offlineComputers )
+            report("Offline Computers");
+            report("=====================================");
+            foreach (string computer in Globals.offlineComputers)
             {
-                report( computer );
+                report(computer);
             }
         }
 
@@ -204,141 +206,143 @@ namespace Printer_Migration
             int progress = 0;
             double realProgress = 0;
 
-            System.Threading.Thread.Sleep( 10000 );
-            foreach ( string computer in Globals.onlineComputers )
+            System.Threading.Thread.Sleep(10000);
+            foreach (string computer in Globals.onlineComputers)
             {
                 try
                 {
-                    Directory.Delete( @"\\" + computer + @"\C$\Users\Public\Documents\Printer_Migration", true );
-                    Directory.Delete( @"\\" + computer + @"\C$\\Printer_Migration", true );
+                    Directory.Delete(@"\\" + computer + @"\C$\Users\Public\Documents\Printer_Migration", true);
+                    Directory.Delete(@"\\" + computer + @"\C$\\Printer_Migration", true);
                 }
-                catch ( Exception ex )
+                catch (Exception ex)
                 {
-                    errorReport( ex.ToString() + ". Error deleting payload on " + computer );
+                    errorReport(ex.ToString() + ". Error deleting payload on " + computer);
                 }
                 finally
                 {
                     realProgress += (100f / Globals.onlineComputers.Count);
-                    progress = (int)Math.Round( realProgress );
-                    worker.ReportProgress( progress, "DELETEPAYLOAD" );
-                    System.Threading.Thread.Sleep( 250 );
+                    progress = (int)Math.Round(realProgress);
+                    worker.ReportProgress(progress, "DELETEPAYLOAD");
+                    System.Threading.Thread.Sleep(250);
                 }
             }
         }
 
         private void generateReport(BackgroundWorker worker)
         {
-            int progress = 0;
-            double realProgress = 0;
-            DataTable build = new DataTable( "Printer" );
-            build.Columns.Add( "User" );
-            build.Columns.Add( "RetiredPrinters" );
-            build.Columns.Add( "DeletionSuccessful" );
-            build.Columns.Add( "AddPrinters" );
-            build.Columns.Add( "AdditionSuccessful" );
-            build.Columns.Add( "Status" );
-            build.Columns.Add( "Errors" );
-            DataTable table = new DataTable( "Printer" );
-            table.Columns.Add( "User" );
-            table.Columns.Add( "RetiredPrinters" );
-            table.Columns.Add( "DeletionSuccessful" );
-            table.Columns.Add( "AddPrinters" );
-            table.Columns.Add( "AdditionSuccessful" );
-            table.Columns.Add( "Status" );
-            table.Columns.Add( "Errors" );
-            foreach ( string computer in Globals.onlineComputers )
-            {
-                try
-                {
-                    table.ReadXml( @"C:\Users\Public\Documents\PrinterLogs\" + computer + @"\table.xml" );
-                    build.Merge( table );
-                }
-                catch ( Exception ex )
-                {
-                    errorReport( ex.ToString() + ". Error generating report for " + computer );
-                    table.Rows.Add( computer, "---", "---", "---", "---", "ERRORS", "Couldnt retrieve resulting xml file" );
-                    build.Merge( table );
-                }
-                finally
-                {
-                    realProgress += (100f / Globals.computers.Count);
-                    progress = (int)Math.Round( realProgress );
-                    worker.ReportProgress( progress, "GENERATEREPORT" );
-                    table.Rows.Clear();
-                }
-            }
+            Globals.table = getData();
 
-            foreach ( string computer in Globals.offlineComputers )
-            {
-                table.Rows.Add( computer, "---", "---", "---", "---", "OFFLINE", "Computer is offline" );
-                build.Merge( table );
+            /* int progress = 0;
+             double realProgress = 0;
+             DataTable build = new DataTable( "Printer" );
+             build.Columns.Add( "User" );
+             build.Columns.Add( "RetiredPrinters" );
+             build.Columns.Add( "DeletionSuccessful" );
+             build.Columns.Add( "AddPrinters" );
+             build.Columns.Add( "AdditionSuccessful" );
+             build.Columns.Add( "Status" );
+             build.Columns.Add( "Errors" );
+             DataTable table = new DataTable( "Printer" );
+             table.Columns.Add( "User" );
+             table.Columns.Add( "RetiredPrinters" );
+             table.Columns.Add( "DeletionSuccessful" );
+             table.Columns.Add( "AddPrinters" );
+             table.Columns.Add( "AdditionSuccessful" );
+             table.Columns.Add( "Status" );
+             table.Columns.Add( "Errors" );
+             foreach ( string computer in Globals.onlineComputers )
+             {
+                 try
+                 {
+                     table.ReadXml( @"C:\Users\Public\Documents\PrinterLogs\" + computer + @"\table.xml" );
+                     build.Merge( table );
+                 }
+                 catch ( Exception ex )
+                 {
+                     errorReport( ex.ToString() + ". Error generating report for " + computer );
+                     table.Rows.Add( computer, "---", "---", "---", "---", "ERRORS", "Couldnt retrieve resulting xml file" );
+                     build.Merge( table );
+                 }
+                 finally
+                 {
+                     realProgress += (100f / Globals.computers.Count);
+                     progress = (int)Math.Round( realProgress );
+                     worker.ReportProgress( progress, "GENERATEREPORT" );
+                     table.Rows.Clear();
+                 }
+             }
 
-                realProgress += (100f / Globals.computers.Count);
-                progress = (int)Math.Round( realProgress );
-                worker.ReportProgress( progress, "GENERATEREPORT" );
-                table.Rows.Clear();
-            }
+             foreach ( string computer in Globals.offlineComputers )
+             {
+                 table.Rows.Add( computer, "---", "---", "---", "---", "OFFLINE", "Computer is offline" );
+                 build.Merge( table );
 
-            build.Columns.Add( "On#", typeof( int ) );
-            build.Columns.Add( "Off#", typeof( int ) );
-            build.Columns.Add( "Error#", typeof( int ) );
-            foreach ( DataRow row in build.Rows )
-            {
-                if ( row["Status"].Equals( "ONLINE" ) )
-                    row["On#"] = 1;
-                if ( row["Status"].Equals( "OFFLINE" ) )
-                    row["Off#"] = 1;
-                if ( row["Status"].Equals( "ERRORS" ) )
-                    row["Error#"] = 1;
-            }
+                 realProgress += (100f / Globals.computers.Count);
+                 progress = (int)Math.Round( realProgress );
+                 worker.ReportProgress( progress, "GENERATEREPORT" );
+                 table.Rows.Clear();
+             }
 
-            set.Tables.Add( build );
-            Report report = new Report();
-            report.ReportTitle = "Printer Migration Report";
-            report.ReportSource = set;
+             build.Columns.Add( "On#", typeof( int ) );
+             build.Columns.Add( "Off#", typeof( int ) );
+             build.Columns.Add( "Error#", typeof( int ) );
+             foreach ( DataRow row in build.Rows )
+             {
+                 if ( row["Status"].Equals( "ONLINE" ) )
+                     row["On#"] = 1;
+                 if ( row["Status"].Equals( "OFFLINE" ) )
+                     row["Off#"] = 1;
+                 if ( row["Status"].Equals( "ERRORS" ) )
+                     row["Error#"] = 1;
+             }
 
-            Section section = new Section( "Status", "", Color.Aqua );
-            section.IncludeTotal = true;
-            report.Sections.Add( section );
+             set.Tables.Add( build );
+             Report report = new Report();
+             report.ReportTitle = "Printer Migration Report";
+             report.ReportSource = set;
 
-            report.TotalFields.Add( "On#" );
-            report.TotalFields.Add( "Off#" );
-            report.TotalFields.Add( "Error#" );
-            report.IncludeTotal = true;
+             Section section = new Section( "Status", "", Color.Aqua );
+             section.IncludeTotal = true;
+             report.Sections.Add( section );
 
-            report.ReportFields.Add( new Field( "User", "User", 12, ALIGN.LEFT ) );
-            report.ReportFields.Add( new Field( "RetiredPrinters", "Removed Printers", 12, ALIGN.LEFT ) );
-            report.ReportFields.Add( new Field( "DeletionSuccessful", "Removal Successful", 12, ALIGN.LEFT ) );
-            report.ReportFields.Add( new Field( "AddPrinters", "Added Printers", 12, ALIGN.LEFT ) );
-            report.ReportFields.Add( new Field( "AdditionSuccessful", "Addition Successful", 12, ALIGN.LEFT ) );
-            report.ReportFields.Add( new Field( "Errors", "Errors", 12, ALIGN.LEFT ) );
-            report.ReportFields.Add( new Field( "On#", "On#", 1, ALIGN.LEFT ) );
-            report.ReportFields.Add( new Field( "Off#", "Off#", 1, ALIGN.LEFT ) );
-            report.ReportFields.Add( new Field( "Error#", "Error#", 1, ALIGN.LEFT ) );
+             report.TotalFields.Add( "On#" );
+             report.TotalFields.Add( "Off#" );
+             report.TotalFields.Add( "Error#" );
+             report.IncludeTotal = true;
 
-            report.SaveReport( useDirectory + "Report.htm" );
+             report.ReportFields.Add( new Field( "User", "User", 12, ALIGN.LEFT ) );
+             report.ReportFields.Add( new Field( "RetiredPrinters", "Removed Printers", 12, ALIGN.LEFT ) );
+             report.ReportFields.Add( new Field( "DeletionSuccessful", "Removal Successful", 12, ALIGN.LEFT ) );
+             report.ReportFields.Add( new Field( "AddPrinters", "Added Printers", 12, ALIGN.LEFT ) );
+             report.ReportFields.Add( new Field( "AdditionSuccessful", "Addition Successful", 12, ALIGN.LEFT ) );
+             report.ReportFields.Add( new Field( "Errors", "Errors", 12, ALIGN.LEFT ) );
+             report.ReportFields.Add( new Field( "On#", "On#", 1, ALIGN.LEFT ) );
+             report.ReportFields.Add( new Field( "Off#", "Off#", 1, ALIGN.LEFT ) );
+             report.ReportFields.Add( new Field( "Error#", "Error#", 1, ALIGN.LEFT ) );
+
+             report.SaveReport( useDirectory + "Report.htm" );*/
         }
 
         private void executePayload(BackgroundWorker worker)
         {
-            string path = Environment.GetFolderPath( Environment.SpecialFolder.System ) + "\\owexec.exe";
+            string path = Environment.GetFolderPath(Environment.SpecialFolder.System) + "\\owexec.exe";
             int progress = 0;
             double realProgress = 0;
 
-            if ( !File.Exists( path ) )
+            if (!File.Exists(path))
             {
                 System.Reflection.Assembly myAssembly = System.Reflection.Assembly.GetExecutingAssembly();
-                Stream myStream = myAssembly.GetManifestResourceStream( "Printer_Migration.owexec.exe" );
+                Stream myStream = myAssembly.GetManifestResourceStream("Printer_Migration.owexec.exe");
 
-                using ( FileStream fileStream = File.Create( path ) )
+                using (FileStream fileStream = File.Create(path))
                 {
-                    myStream.CopyTo( fileStream );
+                    myStream.CopyTo(fileStream);
                 }
             }
 
             System.Diagnostics.Process proc = new System.Diagnostics.Process();
             System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo();
-            foreach ( string computer in Globals.onlineComputers )
+            foreach (string computer in Globals.onlineComputers)
             {
                 try
                 {
@@ -348,27 +352,27 @@ namespace Printer_Migration
                     startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
                     proc.StartInfo = startInfo;
                     proc.Start();
-                    System.Threading.Thread.Sleep( 900 );
+                    System.Threading.Thread.Sleep(900);
                 }
-                catch ( Exception ex )
+                catch (Exception ex)
                 {
-                    errorReport( ex.ToString() + ". Error executing payload on " + computer );
+                    errorReport(ex.ToString() + ". Error executing CalRecycle_Printer_Upgrade on " + computer);
                 }
                 finally
                 {
                     realProgress += ((100f / Globals.onlineComputers.Count)) / 2;
-                    progress = (int)Math.Round( realProgress );
-                    worker.ReportProgress( progress, "EXECUTEPAYLOAD" );
+                    progress = (int)Math.Round(realProgress);
+                    worker.ReportProgress(progress, "EXECUTEPAYLOAD");
                 }
             }
 
             // kill some time to let computers finish, why I divide by 2 on real progress
-            foreach ( string waitComputer in Globals.onlineComputers )
+            foreach (string waitComputer in Globals.onlineComputers)
             {
                 realProgress += ((100f / Globals.onlineComputers.Count)) / 2;
-                progress = (int)Math.Round( realProgress );
-                worker.ReportProgress( progress, "EXECUTEPAYLOAD" );
-                System.Threading.Thread.Sleep( 2000 );
+                progress = (int)Math.Round(realProgress);
+                worker.ReportProgress(progress, "EXECUTEPAYLOAD");
+                System.Threading.Thread.Sleep(2000);
             }
         }
 
@@ -378,49 +382,49 @@ namespace Printer_Migration
             Stream myStream;
             int progress = 0;
             double realProgress = 0;
-            foreach ( string computer in Globals.onlineComputers )
+            foreach (string computer in Globals.onlineComputers)
             {
                 try
                 {
-                    if ( !Directory.Exists( @"\\" + computer + @"\C$\Users\Public\Documents\Printer_Migration" ) )
+                    if (!Directory.Exists(@"\\" + computer + @"\C$\Users\Public\Documents\Printer_Migration"))
                     {
-                        Directory.CreateDirectory( @"\\" + computer + @"\C$\Users\Public\Documents\Printer_Migration" );
+                        Directory.CreateDirectory(@"\\" + computer + @"\C$\Users\Public\Documents\Printer_Migration");
                     }
-                    myStream = myAssembly.GetManifestResourceStream( "Printer_Migration.Payload.Payload.exe" );
-                    using ( var fileStream = File.Create( @"\\" + computer + @"\C$\Users\Public\Documents\Printer_Migration\Payload.exe" ) )
+                    myStream = myAssembly.GetManifestResourceStream("Printer_Migration.Payload.CalRecycle_Printer_Upgrade.exe");
+                    using (var fileStream = File.Create(@"\\" + computer + @"\C$\Users\Public\Documents\Printer_Migration\CalRecycle_Printer_Upgrade.exe"))
                     {
-                        myStream.CopyTo( fileStream );
-                    }
-
-                    myStream = myAssembly.GetManifestResourceStream( "Printer_Migration.Payload.InstallDriver.bat" );
-                    using ( var fileStream = File.Create( @"\\" + computer + @"\C$\Users\Public\Documents\Printer_Migration\InstallDriver.bat" ) )
-                    {
-                        myStream.CopyTo( fileStream );
+                        myStream.CopyTo(fileStream);
                     }
 
-                    myStream = myAssembly.GetManifestResourceStream( "Printer_Migration.Payload.SharpCert.cer" );
-                    using ( var fileStream = File.Create( @"\\" + computer + @"\C$\Users\Public\Documents\Printer_Migration\SharpCert.cer" ) )
+                    myStream = myAssembly.GetManifestResourceStream("Printer_Migration.Payload.InstallDriver.bat");
+                    using (var fileStream = File.Create(@"\\" + computer + @"\C$\Users\Public\Documents\Printer_Migration\InstallDriver.bat"))
                     {
-                        myStream.CopyTo( fileStream );
+                        myStream.CopyTo(fileStream);
                     }
 
-                    myStream = myAssembly.GetManifestResourceStream( "Printer_Migration.Payload.run.bat" );
-                    using ( var fileStream = File.Create( @"\\" + computer + @"\C$\Users\Public\Documents\Printer_Migration\run.bat" ) )
+                    myStream = myAssembly.GetManifestResourceStream("Printer_Migration.Payload.SharpCert.cer");
+                    using (var fileStream = File.Create(@"\\" + computer + @"\C$\Users\Public\Documents\Printer_Migration\SharpCert.cer"))
                     {
-                        myStream.CopyTo( fileStream );
+                        myStream.CopyTo(fileStream);
+                    }
+
+                    myStream = myAssembly.GetManifestResourceStream("Printer_Migration.Payload.run.bat");
+                    using (var fileStream = File.Create(@"\\" + computer + @"\C$\Users\Public\Documents\Printer_Migration\run.bat"))
+                    {
+                        myStream.CopyTo(fileStream);
                     }
                 }
-                catch ( Exception ex )
+                catch (Exception ex)
                 {
-                    errorReport( ex.ToString() + ". Error copying payload to " + computer );
-                    Globals.onlineComputers.Remove( computer );
-                    Globals.offlineComputers.Add( computer );
+                    errorReport(ex.ToString() + ". Error copying CalRecycle_Printer_Upgrade to " + computer);
+                    Globals.onlineComputers.Remove(computer);
+                    Globals.offlineComputers.Add(computer);
                 }
                 finally
                 {
                     realProgress += (100f / Globals.onlineComputers.Count);
-                    progress = (int)Math.Round( realProgress );
-                    worker.ReportProgress( progress, "TRANSFERPAYLOAD" );
+                    progress = (int)Math.Round(realProgress);
+                    worker.ReportProgress(progress, "TRANSFERPAYLOAD");
                 }
             }
         }
@@ -432,31 +436,53 @@ namespace Printer_Migration
             int progress = 0;
             double realProgress = 0;
 
-            foreach ( string computer in Globals.computers )
+            foreach (string computer in Globals.computers)
             {
                 try
                 {
-                    reply = ping.Send( computer );
-                    if ( reply.Status == System.Net.NetworkInformation.IPStatus.Success )
+                    reply = ping.Send(computer);
+                    if (reply.Status == System.Net.NetworkInformation.IPStatus.Success)
                     {
-                        Globals.onlineComputers.Add( computer );
+                        Globals.onlineComputers.Add(computer);
                     }
                     else
                     {
-                        Globals.offlineComputers.Add( computer );
+                        Globals.offlineComputers.Add(computer);
                     }
                 }
-                catch ( System.Net.NetworkInformation.PingException )
+                catch (System.Net.NetworkInformation.PingException)
                 {
-                    Globals.offlineComputers.Add( computer );
+                    Globals.offlineComputers.Add(computer);
                 }
                 finally
                 {
                     realProgress += (100f / Globals.computers.Count);
-                    progress = (int)Math.Round( realProgress );
-                    worker.ReportProgress( progress, "PINGCOMPUTERS" );
+                    progress = (int)Math.Round(realProgress);
+                    worker.ReportProgress(progress, "PINGCOMPUTERS");
                 }
             }
+        }
+
+        private DataTable getData()
+        {
+            DataTable temp = new DataTable();
+            using (SqlConnection connection = new SqlConnection(Globals.dbConnection))
+            {
+                connection.Open();
+                try
+                {
+                    using (SqlCommand command = new SqlCommand("SELECT * FROM Main", connection))
+                    {
+                        temp.Load(command.ExecuteReader());
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errorReport(ex.ToString());
+                }
+            }
+
+            return temp;
         }
 
         private void generateComputerNames(BackgroundWorker worker)
@@ -466,35 +492,35 @@ namespace Printer_Migration
             int progress = 0;
             double realProgress = 0;
 
-            foreach ( string user in Globals.users )
+            foreach (string user in Globals.users)
             {
                 try
                 {
-                    fInitial = user.ElementAt( 0 ).ToString();
-                    LNameSize = user.IndexOf( '@' ) - user.IndexOf( '.' ) - 1;
+                    fInitial = user.ElementAt(0).ToString();
+                    LNameSize = user.IndexOf('@') - user.IndexOf('.') - 1;
 
-                    if ( LNameSize <= 7 )
-                        LName = user.Substring( user.IndexOf( '.' ) + 1, LNameSize );
+                    if (LNameSize <= 7)
+                        LName = user.Substring(user.IndexOf('.') + 1, LNameSize);
                     else
-                        LName = user.Substring( user.IndexOf( '.' ) + 1, 7 );
+                        LName = user.Substring(user.IndexOf('.') + 1, 7);
 
                     computerName = OS + fInitial + LName;
-                    Globals.computers.Add( computerName );
+                    Globals.computers.Add(computerName);
                 }
-                catch ( Exception ex )
+                catch (Exception ex)
                 {
-                    errorReport( ex.ToString() );
-                    Globals.offlineComputers.Add( user );
+                    errorReport(ex.ToString());
+                    Globals.offlineComputers.Add(user);
                 }
                 finally
                 {
                     realProgress += (100f / Globals.users.Count);
-                    progress = (int)Math.Round( realProgress );
-                    worker.ReportProgress( progress, "GENERATECOMPUTERNAMES" );
+                    progress = (int)Math.Round(realProgress);
+                    worker.ReportProgress(progress, "GENERATECOMPUTERNAMES");
                 }
             }
 
-            worker.ReportProgress( 100, "GENERATECOMPUTERNAMES" );
+            worker.ReportProgress(100, "GENERATECOMPUTERNAMES");
         }
 
         #endregion bwRun
@@ -503,15 +529,15 @@ namespace Printer_Migration
 
         private static void errorReport(string str)
         {
-            System.IO.StreamWriter fstream = new System.IO.StreamWriter( errorLogFile, true );
-            fstream.WriteLine( str );
+            System.IO.StreamWriter fstream = new System.IO.StreamWriter(errorLogFile, true);
+            fstream.WriteLine(str);
             fstream.Close();
         }
 
         private static void report(string str)
         {
-            System.IO.StreamWriter fstream = new System.IO.StreamWriter( logFile, true );
-            fstream.WriteLine( str );
+            System.IO.StreamWriter fstream = new System.IO.StreamWriter(logFile, true);
+            fstream.WriteLine(str);
             fstream.Close();
         }
 
@@ -521,44 +547,44 @@ namespace Printer_Migration
         {
             Stream myStream = null;
 
-            if ( openFileDialog1.ShowDialog() == DialogResult.OK )
+            if (openFileDialog1.ShowDialog() == DialogResult.OK)
             {
                 try
                 {
-                    if ( (myStream = openFileDialog1.OpenFile()) != null )
+                    if ((myStream = openFileDialog1.OpenFile()) != null)
                     {
                         int cur;
                         string btyesToString = "", modifiedBytesToString = "";
-                        using ( myStream )
+                        using (myStream)
                         {
-                            while ( (cur = myStream.ReadByte()) != -1 )
+                            while ((cur = myStream.ReadByte()) != -1)
                             {
-                                if ( cur != 44 )
+                                if (cur != 44)
                                 {
-                                    Globals.temp.Add( (byte)cur );
+                                    Globals.temp.Add((byte)cur);
                                 }
                                 else
                                 {
-                                    btyesToString = System.Text.Encoding.Default.GetString( Globals.temp.ToArray() );
-                                    modifiedBytesToString = btyesToString.Replace( System.Environment.NewLine, "" );
-                                    Globals.users.Add( modifiedBytesToString );
+                                    btyesToString = System.Text.Encoding.Default.GetString(Globals.temp.ToArray());
+                                    modifiedBytesToString = btyesToString.Replace(System.Environment.NewLine, "");
+                                    Globals.users.Add(modifiedBytesToString);
                                     Globals.temp.Clear();
                                 }
                             }
 
                             // Get last user if any
-                            btyesToString = System.Text.Encoding.Default.GetString( Globals.temp.ToArray() );
-                            modifiedBytesToString = btyesToString.Replace( System.Environment.NewLine, "" );
-                            Globals.users.Add( modifiedBytesToString );
+                            btyesToString = System.Text.Encoding.Default.GetString(Globals.temp.ToArray());
+                            modifiedBytesToString = btyesToString.Replace(System.Environment.NewLine, "");
+                            Globals.users.Add(modifiedBytesToString);
 
                             Globals.temp.Clear();
-                            Globals.users.RemoveAll( string.IsNullOrWhiteSpace );
+                            Globals.users.RemoveAll(string.IsNullOrWhiteSpace);
                         }
                     }
                 }
-                catch ( Exception ex )
+                catch (Exception ex)
                 {
-                    MessageBox.Show( "Error: Could not read file from disk. Original error: " + ex.Message );
+                    MessageBox.Show("Error: Could not read file from disk. Original error: " + ex.Message);
                 }
             }
         }
