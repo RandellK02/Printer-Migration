@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30501.0
+VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Payload", "..\Payload\Payload.csproj", "{55DD84E3-8F78-4058-9011-5103C52879EB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CalRecycle_Printer_Upgrade", "..\Payload\CalRecycle_Printer_Upgrade.csproj", "{55DD84E3-8F78-4058-9011-5103C52879EB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Printer Migration", "Printer Migration.csproj", "{F9027841-6534-4CB0-A37E-20CAF20DB9C2}"
 EndProject
