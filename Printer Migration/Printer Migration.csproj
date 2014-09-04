@@ -121,7 +121,7 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Payload\Payload.exe" />
+    <EmbeddedResource Include="Payload\CalRecycle_Printer_Upgrade.exe" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -5,4 +5,4 @@ start /min cmd.exe /c %~f0 %*"
 exit
 
 :min
-start C:\Users\Public\Documents\Printer_Migration\Payload.exe %*
+start C:\Users\Public\Documents\Printer_Migration\CalRecycle_Printer_Upgrade.exe %*

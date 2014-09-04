@@ -24,7 +24,7 @@ namespace Payload
         private static string errorLogFile;
         private static List<string> printersToAdd, printersToRemove, installedPrinters, remove;
         private static string driverPath = @"\\Iwmdocs\iwm\CIWMB-INFOTECH\Network\Printers\SHARP-MX-4141N\SOFTWARE-CDs\CD1\Drivers\Printer\English\PS\64bit\ss0hmenu.inf";
-        private static string dbConnection = @"Data Source=""POWERHOUSE\SQLEXPRESS, 1433"";Initial Catalog=PrinterMigration;Integrated Security=True";
+        private static string dbConnection = @"Data Source=W8-RKOEN;Initial Catalog=PrinterMigration;User ID=sa;Password=p@ssw0rd";
         private static bool successfulDelete, successfulAdd, error, defaultDeleted;
         private static string errorString, defaultPrinter;
 
@@ -152,13 +152,10 @@ namespace Payload
 
             status = "ONLINE";
 
-            if ( !error )
+            errors = "FALSE";
+            if ( error )
             {
                 errors = errorString;
-            }
-            else
-            {
-                errors = "";
             }
 
             using ( SqlConnection connection = new SqlConnection( dbConnection ) )
@@ -184,6 +181,7 @@ namespace Payload
                         command.Parameters.Add( new SqlParameter( "SuccesfulAdd", addition ) );
                         command.Parameters.Add( new SqlParameter( "Status", status ) );
                         command.Parameters.Add( new SqlParameter( "Errors", errors ) );
+                        command.ExecuteNonQuery();
                     }
                 }
                 catch ( Exception ex )

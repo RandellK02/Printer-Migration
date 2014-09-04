@@ -17,6 +17,6 @@ namespace Printer_Migration
         public static List<String> printersOnServer = new List<String>();
         public static DataTable table;
         public static string userXLSPath;
-        public static string dbConnection = @"Data Source=""POWERHOUSE\SQLEXPRESS, 1433"";Initial Catalog=PrinterMigration;Integrated Security=True";
+        public static string dbConnection = @"Data Source=W8-RKOEN;Initial Catalog=PrinterMigration;User ID=sa;Password=p@ssw0rd";
     }
 }
