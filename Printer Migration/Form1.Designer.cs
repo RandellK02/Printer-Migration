@@ -58,6 +58,8 @@
             this.label5 = new System.Windows.Forms.Label();
             this.btnRun = new System.Windows.Forms.Button();
             this.bwRun = new System.ComponentModel.BackgroundWorker();
+            this.reportsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.reRunToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
@@ -65,7 +67,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(28, 42);
+            this.label1.Location = new System.Drawing.Point(29, 43);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(51, 13);
             this.label1.TabIndex = 0;
@@ -105,7 +107,7 @@
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(28, 68);
+            this.label4.Location = new System.Drawing.Point(29, 68);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(67, 13);
             this.label4.TabIndex = 5;
@@ -138,7 +140,9 @@
             // menuStrip1
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.fileToolStripMenuItem});
+            this.fileToolStripMenuItem,
+            this.reportsToolStripMenuItem,
+            this.reRunToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(491, 24);
@@ -156,7 +160,7 @@
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(92, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.exitToolStripMenuItem.Text = "Exit";
             // 
             // groupBox1
@@ -310,6 +314,18 @@
             this.bwRun.DoWork += new System.ComponentModel.DoWorkEventHandler(this.bwRun_DoWork);
             this.bwRun.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.bwRun_ProgressChanged);
             // 
+            // reportsToolStripMenuItem
+            // 
+            this.reportsToolStripMenuItem.Name = "reportsToolStripMenuItem";
+            this.reportsToolStripMenuItem.Size = new System.Drawing.Size(59, 20);
+            this.reportsToolStripMenuItem.Text = "Reports";
+            // 
+            // reRunToolStripMenuItem
+            // 
+            this.reRunToolStripMenuItem.Name = "reRunToolStripMenuItem";
+            this.reRunToolStripMenuItem.Size = new System.Drawing.Size(53, 20);
+            this.reRunToolStripMenuItem.Text = "ReRun";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -369,6 +385,8 @@
         private System.Windows.Forms.ProgressBar pbPingComputers;
         private System.Windows.Forms.ProgressBar pbGenComputers;
         private System.ComponentModel.BackgroundWorker bwRun;
+        private System.Windows.Forms.ToolStripMenuItem reportsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem reRunToolStripMenuItem;
     }
 }
 

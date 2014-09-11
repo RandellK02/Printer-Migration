@@ -32,6 +32,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="ExcelExport">
+      <HintPath>..\..\..\..\Dropbox\ExcelExport\ExcelExport\bin\Debug\ExcelExport.dll</HintPath>
+    </Reference>
     <Reference Include="HTMLReportEngine, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Resources\HTMLReportEngine.dll</HintPath>

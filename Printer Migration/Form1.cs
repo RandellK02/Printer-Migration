@@ -1,4 +1,5 @@
-﻿using HTMLReportEngine;
+﻿using Export;
+using HTMLReportEngine;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -43,6 +44,62 @@ namespace Printer_Migration
             source.AddRange( Globals.printersOnServer.ToArray() );
             tbAddPrinters.AutoCompleteCustomSource = source;
             tbDeletePrinters.AutoCompleteCustomSource = source;
+
+            // Get Floors availble for reports
+            DataTable floors = new DataTable();
+            using ( SqlConnection connection = new SqlConnection( Globals.dbConnection ) )
+            {
+                connection.Open();
+                try
+                {
+                    using ( SqlCommand command = new SqlCommand( "SELECT DISTINCT Floor FROM Main ", connection ) )
+                    {
+                        floors.Load( command.ExecuteReader() );
+                    }
+                }
+                catch ( Exception ex )
+                {
+                    errorReport( ex.ToString() );
+                }
+            }
+            foreach ( DataRow row in floors.Rows )
+            {
+                reportsToolStripMenuItem.DropDownItems.Add( row[0] as String );
+                reRunToolStripMenuItem.DropDownItems.Add( row[0] as String );
+            }
+            foreach ( ToolStripMenuItem item in reportsToolStripMenuItem.DropDownItems )
+            {
+                item.Click += new System.EventHandler( this.generateFloorReport );
+            }
+            /*  foreach ( ToolStripMenuItem item in reRunToolStripMenuItem.DropDownItems )
+              {
+                  item.Click += new System.EventHandler( this.rerun );
+              }*/
+        }
+
+        private void generateFloorReport(object sender, EventArgs e)
+        {
+            string floor = sender.ToString().Trim();
+            DataTable data = getData( floor );
+            DataSet dSet = new DataSet();
+            dSet.Tables.Add( data );
+            Report Report = new Report();
+            Report.ReportTitle = "Printer Migration Report (" + floor + "th Floor)";
+            Report.ReportSource = dSet;
+
+            Section section = new Section( "Status", "", Color.Aqua );
+            section.IncludeTotal = true;
+            Report.Sections.Add( section );
+
+            Report.ReportFields.Add( new Field( "Floor", "Floor", 12, ALIGN.LEFT ) );
+            Report.ReportFields.Add( new Field( "User", "User", 12, ALIGN.LEFT ) );
+            Report.ReportFields.Add( new Field( "RetiredPrinters", "Removed Printers", 12, ALIGN.LEFT ) );
+            Report.ReportFields.Add( new Field( "SuccessfulDelete", "Removal Successful", 12, ALIGN.LEFT ) );
+            Report.ReportFields.Add( new Field( "AddedPrinters", "Added Printers", 12, ALIGN.LEFT ) );
+            Report.ReportFields.Add( new Field( "SuccesfulAdd", "Addition Successful", 12, ALIGN.LEFT ) );
+            Report.ReportFields.Add( new Field( "Errors", "Errors", 12, ALIGN.LEFT ) );
+
+            Report.SaveReport( useDirectory + floor + "Report.htm" );
         }
 
         private void btnBrowse_Click(object sender, EventArgs e)
@@ -52,6 +109,7 @@ namespace Printer_Migration
                 try
                 {
                     Globals.userXLSPath = openFileDialog1.FileName;
+                    txtPath.Text = Globals.userXLSPath;
                     if ( !bwUserImport.IsBusy )
                     {
                         bwUserImport.RunWorkerAsync();
@@ -237,57 +295,43 @@ namespace Printer_Migration
 
         private void generateReport(BackgroundWorker worker)
         {
-            // insert offline machines
-            using ( SqlConnection connection = new SqlConnection( Globals.dbConnection ) )
+            finishDB( worker );
+            string floor;
+            if ( !String.IsNullOrWhiteSpace( tbAddPrinters.Text ) )
             {
-                try
+                if ( tbAddPrinters.Text[2].Equals( 'K' ) || tbAddPrinters.Text[2].Equals( 'k' ) )
                 {
-                    connection.Open();
+                    floor = floor = tbAddPrinters.Text.Substring( 0, 3 );
                 }
-                catch ( Exception ex )
+                else
                 {
-                    errorReport( "Couldnt open DB: " + ex.ToString() );
+                    floor = floor = tbAddPrinters.Text.Substring( 0, 2 );
                 }
-
-                report( "Offline Computers" );
-                report( "=====================================" );
-                foreach ( string computer in Globals.offlineComputers )
+            }
+            else
+            {
+                if ( tbDeletePrinters.Text[2].Equals( 'K' ) || tbDeletePrinters.Text[2].Equals( 'k' ) )
                 {
-                    report( computer );
-
-                    try
-                    {
-                        using ( SqlCommand command = new SqlCommand( "INSERT INTO Main VALUES(@User, @RetiredPrinters, @SuccessfulDelete," +
-                                                                   "@AddedPrinters, @SuccesfulAdd, @Status, @Errors)", connection ) )
-                        {
-                            command.Parameters.Add( new SqlParameter( "User", computer ) );
-                            command.Parameters.Add( new SqlParameter( "RetiredPrinters", "---" ) );
-                            command.Parameters.Add( new SqlParameter( "SuccessfulDelete", "---" ) );
-                            command.Parameters.Add( new SqlParameter( "AddedPrinters", "---" ) );
-                            command.Parameters.Add( new SqlParameter( "SuccesfulAdd", "---" ) );
-                            command.Parameters.Add( new SqlParameter( "Status", "OFFLINE" ) );
-                            command.Parameters.Add( new SqlParameter( "Errors", "---" ) );
-                            command.ExecuteNonQuery();
-                        }
-                    }
-                    catch ( Exception ex )
-                    {
-                        errorReport( ex.ToString() );
-                    }
+                    floor = tbDeletePrinters.Text.Substring( 0, 3 );
+                }
+                else
+                {
+                    floor = tbDeletePrinters.Text.Substring( 0, 2 );
                 }
             }
 
-            Globals.table = getData();
+            Globals.table = getData( floor );
 
             set.Tables.Add( Globals.table );
             Report Report = new Report();
-            Report.ReportTitle = "Printer Migration Report";
+            Report.ReportTitle = "Printer Migration Report (" + floor + "th Floor)";
             Report.ReportSource = set;
 
             Section section = new Section( "Status", "", Color.Aqua );
             section.IncludeTotal = true;
             Report.Sections.Add( section );
 
+            Report.ReportFields.Add( new Field( "Floor", "Floor", 12, ALIGN.LEFT ) );
             Report.ReportFields.Add( new Field( "User", "User", 12, ALIGN.LEFT ) );
             Report.ReportFields.Add( new Field( "RetiredPrinters", "Removed Printers", 12, ALIGN.LEFT ) );
             Report.ReportFields.Add( new Field( "SuccessfulDelete", "Removal Successful", 12, ALIGN.LEFT ) );
@@ -295,7 +339,8 @@ namespace Printer_Migration
             Report.ReportFields.Add( new Field( "SuccesfulAdd", "Addition Successful", 12, ALIGN.LEFT ) );
             Report.ReportFields.Add( new Field( "Errors", "Errors", 12, ALIGN.LEFT ) );
 
-            Report.SaveReport( useDirectory + "Report.htm" );
+            Report.SaveReport( useDirectory + floor + "Report.htm" );
+            worker.ReportProgress( 100, "GENERATEREPORT" );
         }
 
         private DataTable getData()
@@ -307,6 +352,28 @@ namespace Printer_Migration
                 try
                 {
                     using ( SqlCommand command = new SqlCommand( "SELECT * FROM Main", connection ) )
+                    {
+                        temp.Load( command.ExecuteReader() );
+                    }
+                }
+                catch ( Exception ex )
+                {
+                    errorReport( ex.ToString() );
+                }
+            }
+
+            return temp;
+        }
+
+        private DataTable getData(string floor)
+        {
+            DataTable temp = new DataTable( "Migration Report" );
+            using ( SqlConnection connection = new SqlConnection( Globals.dbConnection ) )
+            {
+                connection.Open();
+                try
+                {
+                    using ( SqlCommand command = new SqlCommand( "SELECT * FROM Main WHERE Floor='" + floor + "'", connection ) )
                     {
                         temp.Load( command.ExecuteReader() );
                     }
@@ -506,6 +573,172 @@ namespace Printer_Migration
             }
 
             worker.ReportProgress( 100, "GENERATECOMPUTERNAMES" );
+        }
+
+        private void finishDB(BackgroundWorker worker)
+        {
+            using ( SqlConnection connection = new SqlConnection( Globals.dbConnection ) )
+            {
+                try
+                {
+                    connection.Open();
+                }
+                catch ( Exception ex )
+                {
+                    errorReport( "Couldnt open DB: " + ex.ToString() );
+                }
+                try
+                {
+                    // Set completed status
+                    using ( SqlCommand command = new SqlCommand( "UPDATE Main SET Status='COMPLETED' WHERE Status='ONLINE'", connection ) )
+                    {
+                        command.ExecuteNonQuery();
+                    }
+                    worker.ReportProgress( 25, "GENERATEREPORT" );
+
+                    // Set Error Status
+                    using ( SqlCommand command = new SqlCommand( "UPDATE Main SET Status='ERROR' WHERE SuccessfulDelete='FALSE' Or SuccesfulAdd='FALSE'", connection ) )
+                    {
+                        command.ExecuteNonQuery();
+                    }
+                    worker.ReportProgress( 50, "GENERATEREPORT" );
+
+                    // Set Offline Status
+                    string floor;
+                    if ( !String.IsNullOrWhiteSpace( tbAddPrinters.Text ) )
+                    {
+                        if ( tbAddPrinters.Text[2].Equals( 'K' ) || tbAddPrinters.Text[2].Equals( 'k' ) )
+                        {
+                            floor = floor = tbAddPrinters.Text.Substring( 0, 3 );
+                        }
+                        else
+                        {
+                            floor = floor = tbAddPrinters.Text.Substring( 0, 2 );
+                        }
+                    }
+                    else
+                    {
+                        if ( tbDeletePrinters.Text[2].Equals( 'K' ) || tbDeletePrinters.Text[2].Equals( 'k' ) )
+                        {
+                            floor = tbDeletePrinters.Text.Substring( 0, 3 );
+                        }
+                        else
+                        {
+                            floor = tbDeletePrinters.Text.Substring( 0, 2 );
+                        }
+                    }
+
+                    report( "Offline Computers" );
+                    report( "=====================================" );
+                    if ( Globals.offlineComputers.Count > 0 )
+                    {
+                        foreach ( string computer in Globals.offlineComputers )
+                        {
+                            report( computer );
+
+                            try
+                            {
+                                using ( SqlCommand command = new SqlCommand( "INSERT INTO Main VALUES(@Floor, @User, @RetiredPrinters, @SuccessfulDelete," +
+                                                                           "@AddedPrinters, @SuccesfulAdd, @Status, @Errors)", connection ) )
+                                {
+                                    command.Parameters.Add( new SqlParameter( "Floor", floor ) );
+                                    command.Parameters.Add( new SqlParameter( "User", computer ) );
+                                    command.Parameters.Add( new SqlParameter( "RetiredPrinters", "---" ) );
+                                    command.Parameters.Add( new SqlParameter( "SuccessfulDelete", "---" ) );
+                                    command.Parameters.Add( new SqlParameter( "AddedPrinters", "---" ) );
+                                    command.Parameters.Add( new SqlParameter( "SuccesfulAdd", "---" ) );
+                                    command.Parameters.Add( new SqlParameter( "Status", "OFFLINE" ) );
+                                    command.Parameters.Add( new SqlParameter( "Errors", "---" ) );
+                                    command.ExecuteNonQuery();
+                                }
+                            }
+                            catch ( Exception ex )
+                            {
+                                errorReport( ex.ToString() );
+                            }
+                        }
+                    }
+
+                    // Validate all machines accounted for
+                    /*  DataTable temp = new DataTable();
+                      List<String> noResponse = new List<string>();
+                      using ( SqlCommand command = new SqlCommand( "SELECT * FROM Main WHERE Floor='" + floor + "'", connection ) )
+                      {
+                          temp.Load( command.ExecuteReader() );
+                      }
+                      if ( temp.Rows.Count != Globals.computers.Count )
+                      {
+                          bool found = false;
+
+                          foreach ( string computer in Globals.computers )
+                          {
+                              foreach ( DataRow row in temp.Rows )
+                              {
+                                  if ( computer.Equals( row["User"].ToString() ) || computer.Equals( row["User"].ToString().Substring( 3 ) ) )
+                                  {
+                                      found = true;
+                                  }
+                              }
+
+                              if ( !found )
+                              {
+                                  noResponse.Add( computer );
+                              }
+                          }
+
+                          if ( noResponse.Count > 0 )
+                          {
+                              foreach ( string computer in noResponse )
+                              {
+                                  try
+                                  {
+                                      using ( SqlCommand command = new SqlCommand( "INSERT INTO Main VALUES(@Floor, @User, @RetiredPrinters, @SuccessfulDelete," +
+                                                                                 "@AddedPrinters, @SuccesfulAdd, @Status, @Errors)", connection ) )
+                                      {
+                                          command.Parameters.Add( new SqlParameter( "Floor", floor ) );
+                                          command.Parameters.Add( new SqlParameter( "User", computer ) );
+                                          command.Parameters.Add( new SqlParameter( "RetiredPrinters", "---" ) );
+                                          command.Parameters.Add( new SqlParameter( "SuccessfulDelete", "---" ) );
+                                          command.Parameters.Add( new SqlParameter( "AddedPrinters", "---" ) );
+                                          command.Parameters.Add( new SqlParameter( "SuccesfulAdd", "---" ) );
+                                          command.Parameters.Add( new SqlParameter( "Status", "ERROR" ) );
+                                          command.Parameters.Add( new SqlParameter( "Errors", "Recieved no response" ) );
+                                          command.ExecuteNonQuery();
+                                      }
+                                  }
+                                  catch ( Exception ex )
+                                  {
+                                      errorReport( ex.ToString() );
+                                  }
+                              }
+                          }
+                      }
+
+                      // export offline machines
+                      try
+                      {
+                          DataTable offline = new DataTable( "Offline Computer" );
+                          using ( SqlCommand command = new SqlCommand( "SELECT User FROM Main WHERE Status='OFFLINE' AND Floor='" + floor + "'", connection ) )
+                          {
+                              offline.Load( command.ExecuteReader() );
+
+                              Export.Excel e = new Export.Excel( offline );
+                              if ( !e.Export() )
+                              {
+                                  errorReport( "Unable to export offline machines" );
+                              }
+                          }
+                      }
+                      catch ( Exception ex )
+                      {
+                          errorReport( ex.ToString() );
+                      }*/
+                }
+                catch ( Exception ex )
+                {
+                    errorReport( ex.ToString() );
+                }
+            }
         }
 
         #endregion bwRun

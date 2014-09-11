@@ -70,7 +70,30 @@ namespace Payload
 
         private static void generateTable()
         {
-            string user, removeList, deletion, addList, addition, status, errors;
+            string floor, user, removeList, deletion, addList, addition, status, errors;
+
+            if ( !String.IsNullOrWhiteSpace( printersToAdd[0] ) )
+            {
+                if ( printersToAdd[0][2].Equals( 'K' ) || printersToAdd[0][2].Equals( 'k' ) )
+                {
+                    floor = printersToAdd[0].Substring( 0, 3 );
+                }
+                else
+                {
+                    floor = printersToAdd[0].Substring( 0, 2 );
+                }
+            }
+            else
+            {
+                if ( printersToRemove[0][2].Equals( 'K' ) || printersToRemove[0][2].Equals( 'k' ) )
+                {
+                    floor = printersToRemove[0].Substring( 0, 3 );
+                }
+                else
+                {
+                    floor = printersToRemove[0].Substring( 0, 2 );
+                }
+            }
 
             user = Environment.UserName;
 
@@ -171,9 +194,10 @@ namespace Payload
 
                 try
                 {
-                    using ( SqlCommand command = new SqlCommand( "INSERT INTO Main VALUES(@User, @RetiredPrinters, @SuccessfulDelete," +
+                    using ( SqlCommand command = new SqlCommand( "INSERT INTO Main VALUES(@Floor, @User, @RetiredPrinters, @SuccessfulDelete," +
                                                                "@AddedPrinters, @SuccesfulAdd, @Status, @Errors)", connection ) )
                     {
+                        command.Parameters.Add( new SqlParameter( "Floor", floor ) );
                         command.Parameters.Add( new SqlParameter( "User", user ) );
                         command.Parameters.Add( new SqlParameter( "RetiredPrinters", removeList ) );
                         command.Parameters.Add( new SqlParameter( "SuccessfulDelete", deletion ) );
@@ -235,7 +259,7 @@ namespace Payload
                     successfulAdd = false;
                     errorReport( ex.ToString() + ". Error adding printer " + printer );
                     error = true;
-                    errorString = ex.ToString() + ". Error adding printer " + printer;
+                    errorString = "Error adding printer " + printer;
                 }
             }
 
@@ -270,7 +294,7 @@ namespace Payload
             {
                 errorReport( ex.ToString() );
                 error = true;
-                errorString = ex.ToString() + ". Error installing print driver";
+                errorString = "Error installing print driver";
             }
         }
 
@@ -383,7 +407,7 @@ namespace Payload
                     errorReport( "Error removing printer " + printer + ". " + ex.ToString() );
                     successfulDelete = false;
                     error = true;
-                    errorString = "Error removing printer " + printer + ". " + ex.ToString();
+                    errorString = "Error removing printer " + printer + ". ";
                 }
                 System.Threading.Thread.Sleep( 1000 );
             }
@@ -488,7 +512,6 @@ namespace Payload
         private static void errorReport(string str)
         {
             error = true;
-            errorString = str;
 
             System.IO.StreamWriter fstream = new System.IO.StreamWriter( errorLogFile, true );
             fstream.WriteLine( str );
